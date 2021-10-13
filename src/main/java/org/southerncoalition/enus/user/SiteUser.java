@@ -151,7 +151,7 @@ public class SiteUser extends SiteUserGen<Cluster> {
 		c.o(false);
 	}
 
-	/**
+	/** 
 	 * {@inheritDoc}
 	 * Indexed: true
 	 * Stored: true

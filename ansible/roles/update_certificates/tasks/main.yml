@@ -1,0 +1,28 @@
+---
+# Label: project_openshift_tasks
+# Title: create the Ansible tasks for deploying the application to OpenShift
+# Mission: create the Ansible tasks for deploying the application to OpenShift
+# Milestone: Automate Project Deployment
+# Column: Automate Project Deployment
+- name: Install keystore secrets on OpenShift
+  k8s:
+    state: present
+    name: southerncoalition-keystore
+    host: "{{SOUTHERNCOALITION_HOST}}"
+    api_key: "{{SOUTHERNCOALITION_TOKEN}}"
+    namespace: "{{SOUTHERNCOALITION_NAMESPACE}}"
+    definition: "{{ lookup('template', 'project_keystore.yml') }}"
+    validate_certs: false
+- name: Rollout deployment config
+  shell: "oc login {{SOUTHERNCOALITION_HOST}} --token={{REDHAT_OPENSHIFT_TOKEN}} && oc rollout latest dc/southerncoalition -n {{ SOUTHERNCOALITION_NAMESPACE }}"
+- name: Install sso keystore secret on OpenShift
+  k8s: 
+    state: present
+    name: sso-keystore
+    host: "{{SSO_HOST}}"
+    api_key: "{{SSO_TOKEN}}"
+    namespace: "{{SSO_NAMESPACE}}"
+    definition: "{{ lookup('template', 'redhat_sso_keystore.yml') }}"
+    validate_certs: false
+- name: Rollout deployment config
+  shell: "oc login {{SSO_HOST}} --token={{REDHAT_OPENSHIFT_TOKEN}} && oc rollout latest dc/sso -n {{ SSO_NAMESPACE }}"
