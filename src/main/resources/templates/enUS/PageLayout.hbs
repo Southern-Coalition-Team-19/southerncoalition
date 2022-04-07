@@ -1,0 +1,83 @@
+{{> "htmPageLayout"}}
+{{#*inline "htmHeadPageLayout"}}{{> "htmTitlePageLayout"}}{{> "htmMetaPageLayout"}}{{> "htmStylePageLayout"}}{{> "htmScriptsPageLayout"}}{{> "htmScriptPageLayout"}}{{/inline}}
+{{#*inline "htmScriptsPageLayout"}}		<!-- inline "htmScriptsPageLayout" -->
+		<script src="{{staticBaseUrl}}/js/jquery-1.12.4.min.js"></script>
+{{#if FONTAWESOME_KIT }}
+		<script src="{{ FONTAWESOME_KIT }}"></script>
+{{/if}}
+		<script src="{{staticBaseUrl}}/js/site-enUS.js"></script>
+		<script src="{{staticBaseUrl}}/js/moment.js"></script>
+		<script src="{{staticBaseUrl}}/js/sockjs.js"></script>
+		<script src="{{staticBaseUrl}}/js/vertx-eventbus.js"></script>
+		<script src="{{staticBaseUrl}}/js/plotly-2.9.0.min.js"></script>
+{{/inline}}
+{{#*inline "htmScriptPageLayout"}}		<!-- inline "htmScriptPageLayout" -->
+{{/inline}}
+{{#*inline "htmStylePageLayout"}}		<!-- inline "htmStylePageLayout" -->
+		<link rel="icon" href="{{staticBaseUrl}}/favicon.ico" />
+		<link rel="stylesheet" href="{{staticBaseUrl}}/css/w3.css" />
+		<link rel="stylesheet" href="{{staticBaseUrl}}/css/site-enUS.css" />
+{{/inline}}
+{{#*inline "htmMetaPageLayout"}}		<!-- inline "htmMetaPageLayout" -->
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+{{/inline}}
+{{#*inline "htmTitlePageLayout"}}		<!-- inline "htmTitlePageLayout" -->
+		<title>southerncoalition</title>
+{{/inline}}
+{{#*inline "htmBodyMenuMainTemplate"}}
+		<div class="w3-bar ">
+			<div class="w3-bar w3-hide-small ">
+				<a class="w3-bar-item w3-button w3-button w3-text-teal " href="{{ SITE_BASE_URL }}"><i class="fad fa-house w3-text-teal "></i> Event Phenomenon</a>
+{{> "htmMenuItems"}}
+			</div>
+			<div class="w3-bar w3-hide-medium w3-hide-large ">
+				<a class="w3-bar-item w3-button w3-button w3-text-teal " href="{{ SITE_BASE_URL }}"><i class="fad fa-house w3-text-teal "></i> Event Phenomenon</a>
+				<div class="w3-dropdown-hover ">
+					<button class="w3-button w3-text-black "><i class="fad fa-bars w3-text-black "></i> Menu</button>
+					<div class="w3-dropdown-content w3-bar-block w3-card-4 ">
+{{> "htmMenuItems"}}
+					</div>
+				</div>
+			</div>
+		</div>
+{{/inline}}
+{{#*inline "htmMenuItems"}}
+{{#if userKey}}
+				<a href="/user/{{ userKey }}" class="w3-bar-item w3-button w3-text-teal "><i class="fad fa-house-user w3-text-teal "></i> {{userName}}</a>
+				<a href="{{ logoutUrl }}" class="w3-bar-item w3-button w3-text-teal "><i class="fad fa-house-user w3-text-teal "></i> Logout</a>
+{{else}}
+				<a href="/user" class="w3-bar-item w3-button w3-text-teal "><i class="fad fa-house-user w3-text-teal "></i> Login</a>
+{{/if}}
+				<a href="{{siteBaseUrl}}/computer" class="w3-bar-item w3-button w3-text-cyan "> Computers</a>
+				<a href="{{siteBaseUrl}}/event" class="w3-bar-item w3-button w3-text-2017-niagara "> Events</a>
+				<a href="{{siteBaseUrl}}/playbook" class="w3-bar-item w3-button w3-text-2017-marina "> Playbooks</a>
+				<a href="{{siteBaseUrl}}/rule" class="w3-bar-item w3-button w3-text-2017-lapis-blue "> Rules</a>
+				<a href="{{siteBaseUrl}}/message" class="w3-bar-item w3-button w3-text-2017-navy-peony "> Messages</a>
+				<a href="{{siteBaseUrl}}/job" class="w3-bar-item w3-button w3-text-2021-mint "> Jobs</a>
+				<a href="{{siteBaseUrl}}/problem" class="w3-bar-item w3-button w3-text-2017-tawny-port "> Problems</a>
+{{/inline}}
+{{#*inline "htmBodyStartPageLayout"}}		<!-- inline "htmBodyStartPageLayout" -->
+{{/inline}}
+{{#*inline "htmBodyEndPageLayout"}}		<!-- inline "htmBodyEndPageLayout" -->
+{{/inline}}
+{{#*inline "htmBodyPageLayout"}}		<!-- inline "htmBodyPageLayout" -->
+{{#block "htmBodyStart"}}{{/block}}
+{{#block "htmBodyEnd"}}{{/block}}
+		<footer class="w3-center w3-black w3-text-white w3-padding-24 ">
+			<div class="w3-bar ">
+				<a class="w3-bar-item grow-50" href="https://www.openshift.com/products/online/"><span class="w3-small ">Powered by </span><img alt="" class="w3-image " style="display: inline-block; width: 100px; margin: 0 10px;" src="{{staticBaseUrl}}/svg/openshift.svg"/></a>
+			</div>
+		</footer>
+{{/inline}}
+{{#*inline "htmPageLayout"}}<!DOCTYPE html>
+<!-- inline "htmPageLayout" -->
+<html lang="en" style="height: 100%;">
+	<head>
+{{#block "htmHead"}}{{/block}}
+	</head>
+	<body class="" style="height: 100%;">
+{{#block "htmBody"}}{{/block}}
+	</body>
+</html>
+{{/inline}}

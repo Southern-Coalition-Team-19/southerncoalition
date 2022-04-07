@@ -51,7 +51,7 @@ spec:
           volumeMounts:
             - mountPath: /opt/solr/data
               name: computate-solr-data-volume
-      dnsPolicy: ClusterFirst
+      dnsPolicy: BaseModelFirst
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}

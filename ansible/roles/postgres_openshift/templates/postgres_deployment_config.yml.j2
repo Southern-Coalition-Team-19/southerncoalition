@@ -71,7 +71,7 @@ spec:
           volumeMounts:
             - mountPath: /var/lib/pgsql/data
               name: postgresql-data
-      dnsPolicy: ClusterFirst
+      dnsPolicy: BaseModelFirst
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}

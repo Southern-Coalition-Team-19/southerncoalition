@@ -1822,29 +1822,29 @@ paths:
                 $ref: '#/components/requestBodies/ErrorResponse'
   /api/cluster:
     post:
-      operationId: postCluster
-      x-vertx-event-bus: southerncoalition-enUS-Cluster
+      operationId: postBaseModel
+      x-vertx-event-bus: southerncoalition-enUS-BaseModel
       security:
         - openIdConnect:
           - DefaultAuthScope
       description: >+
       summary: >+
       tags:
-        - Cluster
+        - BaseModel
       requestBody:
         description: >+
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/POSTClusterRequest'
+              $ref: '#/components/schemas/POSTBaseModelRequest'
       responses:
         '200':
           description: >+
           content:
             application/json; charset=utf-8:
               schema:
-                $ref: '#/components/requestBodies/POSTClusterResponse'
+                $ref: '#/components/requestBodies/POSTBaseModelResponse'
         '400':
           description: >+
                 <table><table><tr><td>Type</td><td>Code</td><td>Details</td></tr><tr><td>error</td><td>invalidRequest</td><td>Missing
@@ -1892,15 +1892,15 @@ paths:
               schema:
                 $ref: '#/components/requestBodies/ErrorResponse'
     put:
-      operationId: putCluster
-      x-vertx-event-bus: southerncoalition-enUS-Cluster
+      operationId: putBaseModel
+      x-vertx-event-bus: southerncoalition-enUS-BaseModel
       security:
         - openIdConnect:
           - DefaultAuthScope
       description: >+
       summary: >+
       tags:
-        - Cluster
+        - BaseModel
       parameters:
         - name: vertx-web.session
           in: cookie
@@ -1969,14 +1969,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PUTClusterRequest'
+              $ref: '#/components/schemas/PUTBaseModelRequest'
       responses:
         '200':
           description: >+
           content:
             application/json; charset=utf-8:
               schema:
-                $ref: '#/components/requestBodies/PUTClusterResponse'
+                $ref: '#/components/requestBodies/PUTBaseModelResponse'
         '400':
           description: >+
                 <table><table><tr><td>Type</td><td>Code</td><td>Details</td></tr><tr><td>error</td><td>invalidRequest</td><td>Missing
@@ -2024,15 +2024,15 @@ paths:
               schema:
                 $ref: '#/components/requestBodies/ErrorResponse'
     patch:
-      operationId: patchCluster
-      x-vertx-event-bus: southerncoalition-enUS-Cluster
+      operationId: patchBaseModel
+      x-vertx-event-bus: southerncoalition-enUS-BaseModel
       security:
         - openIdConnect:
           - DefaultAuthScope
       description: >+
       summary: >+
       tags:
-        - Cluster
+        - BaseModel
       parameters:
         - name: vertx-web.session
           in: cookie
@@ -2101,14 +2101,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PATCHClusterRequest'
+              $ref: '#/components/schemas/PATCHBaseModelRequest'
       responses:
         '200':
           description: >+
           content:
             application/json; charset=utf-8:
               schema:
-                $ref: '#/components/requestBodies/PATCHClusterResponse'
+                $ref: '#/components/requestBodies/PATCHBaseModelResponse'
         '400':
           description: >+
                 <table><table><tr><td>Type</td><td>Code</td><td>Details</td></tr><tr><td>error</td><td>invalidRequest</td><td>Missing
@@ -2156,15 +2156,15 @@ paths:
               schema:
                 $ref: '#/components/requestBodies/ErrorResponse'
     get:
-      operationId: searchCluster
-      x-vertx-event-bus: southerncoalition-enUS-Cluster
+      operationId: searchBaseModel
+      x-vertx-event-bus: southerncoalition-enUS-BaseModel
       security:
         - openIdConnect:
           - DefaultAuthScope
       description: >+
       summary: >+
       tags:
-        - Cluster
+        - BaseModel
       parameters:
         - name: vertx-web.session
           in: cookie
@@ -2233,7 +2233,7 @@ paths:
           content:
             application/json; charset=utf-8:
               schema:
-                $ref: '#/components/requestBodies/SearchClusterResponse'
+                $ref: '#/components/requestBodies/SearchBaseModelResponse'
         '400':
           description: >+
                 <table><table><tr><td>Type</td><td>Code</td><td>Details</td></tr><tr><td>error</td><td>invalidRequest</td><td>Missing
@@ -2282,15 +2282,15 @@ paths:
                 $ref: '#/components/requestBodies/ErrorResponse'
   /api/cluster/{id}:
     get:
-      operationId: getCluster
-      x-vertx-event-bus: southerncoalition-enUS-Cluster
+      operationId: getBaseModel
+      x-vertx-event-bus: southerncoalition-enUS-BaseModel
       security:
         - openIdConnect:
           - DefaultAuthScope
       description: >+
       summary: >+
       tags:
-        - Cluster
+        - BaseModel
       parameters:
         - name: vertx-web.session
           in: cookie
@@ -2312,7 +2312,7 @@ paths:
           content:
             application/json; charset=utf-8:
               schema:
-                $ref: '#/components/requestBodies/GETClusterResponse'
+                $ref: '#/components/requestBodies/GETBaseModelResponse'
         '400':
           description: >+
                 <table><table><tr><td>Type</td><td>Code</td><td>Details</td></tr><tr><td>error</td><td>invalidRequest</td><td>Missing
@@ -7938,46 +7938,46 @@ components:
         text/html; charset=utf-8:
           schema:
             $ref: '#/components/schemas/SearchPageSiteStateResponse'
-    POSTClusterRequest:
+    POSTBaseModelRequest:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/POSTClusterRequest'
-    POSTClusterResponse:
+            $ref: '#/components/schemas/POSTBaseModelRequest'
+    POSTBaseModelResponse:
       content:
         application/json; charset=utf-8:
           schema:
-            $ref: '#/components/schemas/POSTClusterResponse'
-    PUTClusterRequest:
+            $ref: '#/components/schemas/POSTBaseModelResponse'
+    PUTBaseModelRequest:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PUTClusterRequest'
-    PUTClusterResponse:
+            $ref: '#/components/schemas/PUTBaseModelRequest'
+    PUTBaseModelResponse:
       content:
         application/json; charset=utf-8:
           schema:
-            $ref: '#/components/schemas/PUTClusterResponse'
-    PATCHClusterRequest:
+            $ref: '#/components/schemas/PUTBaseModelResponse'
+    PATCHBaseModelRequest:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PATCHClusterRequest'
-    PATCHClusterResponse:
+            $ref: '#/components/schemas/PATCHBaseModelRequest'
+    PATCHBaseModelResponse:
       content:
         application/json; charset=utf-8:
           schema:
-            $ref: '#/components/schemas/PATCHClusterResponse'
-    SearchClusterResponse:
+            $ref: '#/components/schemas/PATCHBaseModelResponse'
+    SearchBaseModelResponse:
       content:
         application/json; charset=utf-8:
           schema:
-            $ref: '#/components/schemas/SearchClusterResponse'
-    GETClusterResponse:
+            $ref: '#/components/schemas/SearchBaseModelResponse'
+    GETBaseModelResponse:
       content:
         application/json; charset=utf-8:
           schema:
-            $ref: '#/components/schemas/GETClusterResponse'
+            $ref: '#/components/schemas/GETBaseModelResponse'
     SearchPageSiteAgencyResponse:
       content:
         text/html; charset=utf-8:
@@ -8276,7 +8276,7 @@ components:
   schemas:
     SearchSiteUserResponse:
       allOf:
-        - $ref: "#/components/schemas/SearchClusterResponse"
+        - $ref: "#/components/schemas/SearchBaseModelResponse"
         - type: array
           items:
             type: object
@@ -8311,7 +8311,7 @@ components:
                 type: boolean
     PATCHSiteUserRequest:
       allOf:
-        - $ref: "#/components/schemas/PATCHClusterRequest"
+        - $ref: "#/components/schemas/PATCHBaseModelRequest"
         - type: object
           properties:
             setUserKeys:
@@ -8417,7 +8417,7 @@ components:
               type: boolean
     PATCHSiteUserResponse:
       allOf:
-        - $ref: "#/components/schemas/PATCHClusterResponse"
+        - $ref: "#/components/schemas/PATCHBaseModelResponse"
         - type: object
           properties:
             setUserKeys:
@@ -8523,7 +8523,7 @@ components:
               type: boolean
     POSTSiteUserRequest:
       allOf:
-        - $ref: "#/components/schemas/POSTClusterRequest"
+        - $ref: "#/components/schemas/POSTBaseModelRequest"
         - type: object
           properties:
             userKeys:
@@ -8556,7 +8556,7 @@ components:
               type: boolean
     POSTSiteUserResponse:
       allOf:
-        - $ref: "#/components/schemas/POSTClusterResponse"
+        - $ref: "#/components/schemas/POSTBaseModelResponse"
         - type: object
           properties:
             userKeys:
@@ -8614,7 +8614,7 @@ components:
                 type: string
     POSTSiteStateRequest:
       allOf:
-        - $ref: "#/components/schemas/POSTClusterRequest"
+        - $ref: "#/components/schemas/POSTBaseModelRequest"
         - type: object
           properties:
             stateKey:
@@ -8635,7 +8635,7 @@ components:
               type: string
     POSTSiteStateResponse:
       allOf:
-        - $ref: "#/components/schemas/POSTClusterResponse"
+        - $ref: "#/components/schemas/POSTBaseModelResponse"
         - type: object
           properties:
             stateKey:
@@ -8656,7 +8656,7 @@ components:
               type: string
     PATCHSiteStateRequest:
       allOf:
-        - $ref: "#/components/schemas/PATCHClusterRequest"
+        - $ref: "#/components/schemas/PATCHBaseModelRequest"
         - type: object
           properties:
             setStateKey:
@@ -8720,7 +8720,7 @@ components:
               type: string
     PATCHSiteStateResponse:
       allOf:
-        - $ref: "#/components/schemas/PATCHClusterResponse"
+        - $ref: "#/components/schemas/PATCHBaseModelResponse"
         - type: object
           properties:
             setStateKey:
@@ -8784,7 +8784,7 @@ components:
               type: string
     SearchSiteStateResponse:
       allOf:
-        - $ref: "#/components/schemas/SearchClusterResponse"
+        - $ref: "#/components/schemas/SearchBaseModelResponse"
         - type: array
           items:
             type: object
@@ -8927,7 +8927,7 @@ components:
               type: string
     GETSiteStateResponse:
       allOf:
-        - $ref: "#/components/schemas/GETClusterResponse"
+        - $ref: "#/components/schemas/GETBaseModelResponse"
         - type: object
           properties:
             stateKey:
@@ -8949,7 +8949,7 @@ components:
     SearchPageSiteStateResponse:
       allOf:
         - type: string
-    POSTClusterRequest:
+    POSTBaseModelRequest:
       allOf:
         - type: object
           properties:
@@ -9005,7 +9005,7 @@ components:
               type: string
             pageH1:
               type: string
-    POSTClusterResponse:
+    POSTBaseModelResponse:
       allOf:
         - type: object
           properties:
@@ -9061,7 +9061,7 @@ components:
               type: string
             pageH1:
               type: string
-    PUTClusterRequest:
+    PUTBaseModelRequest:
       allOf:
         - type: object
           properties:
@@ -9117,7 +9117,7 @@ components:
               type: string
             pageH1:
               type: string
-    PUTClusterResponse:
+    PUTBaseModelResponse:
       allOf:
         - type: object
           properties:
@@ -9173,7 +9173,7 @@ components:
               type: string
             pageH1:
               type: string
-    PATCHClusterRequest:
+    PATCHBaseModelRequest:
       allOf:
         - type: object
           properties:
@@ -9365,7 +9365,7 @@ components:
               type: string
             removeAllPageH1:
               type: string
-    PATCHClusterResponse:
+    PATCHBaseModelResponse:
       allOf:
         - type: object
           properties:
@@ -9557,7 +9557,7 @@ components:
               type: string
             removeAllPageH1:
               type: string
-    SearchClusterResponse:
+    SearchBaseModelResponse:
       allOf:
         - type: array
           items:
@@ -9615,7 +9615,7 @@ components:
                 type: string
               pageH1:
                 type: string
-    GETClusterResponse:
+    GETBaseModelResponse:
       allOf:
         - type: object
           properties:
@@ -9708,7 +9708,7 @@ components:
                 type: string
     POSTSiteAgencyRequest:
       allOf:
-        - $ref: "#/components/schemas/POSTClusterRequest"
+        - $ref: "#/components/schemas/POSTBaseModelRequest"
         - type: object
           properties:
             agencyKey:
@@ -9739,7 +9739,7 @@ components:
               type: string
     POSTSiteAgencyResponse:
       allOf:
-        - $ref: "#/components/schemas/POSTClusterResponse"
+        - $ref: "#/components/schemas/POSTBaseModelResponse"
         - type: object
           properties:
             agencyKey:
@@ -9770,7 +9770,7 @@ components:
               type: string
     PATCHSiteAgencyRequest:
       allOf:
-        - $ref: "#/components/schemas/PATCHClusterRequest"
+        - $ref: "#/components/schemas/PATCHBaseModelRequest"
         - type: object
           properties:
             setAgencyKey:
@@ -9869,7 +9869,7 @@ components:
               type: string
     PATCHSiteAgencyResponse:
       allOf:
-        - $ref: "#/components/schemas/PATCHClusterResponse"
+        - $ref: "#/components/schemas/PATCHBaseModelResponse"
         - type: object
           properties:
             setAgencyKey:
@@ -9968,7 +9968,7 @@ components:
               type: string
     SearchSiteAgencyResponse:
       allOf:
-        - $ref: "#/components/schemas/SearchClusterResponse"
+        - $ref: "#/components/schemas/SearchBaseModelResponse"
         - type: array
           items:
             type: object
@@ -10181,7 +10181,7 @@ components:
               type: string
     GETSiteAgencyResponse:
       allOf:
-        - $ref: "#/components/schemas/GETClusterResponse"
+        - $ref: "#/components/schemas/GETBaseModelResponse"
         - type: object
           properties:
             agencyKey:
@@ -10524,7 +10524,7 @@ components:
                 type: string
     POSTReportCardRequest:
       allOf:
-        - $ref: "#/components/schemas/POSTClusterRequest"
+        - $ref: "#/components/schemas/POSTBaseModelRequest"
         - type: object
           properties:
             reportCardKey:
@@ -10835,7 +10835,7 @@ components:
               type: string
     POSTReportCardResponse:
       allOf:
-        - $ref: "#/components/schemas/POSTClusterResponse"
+        - $ref: "#/components/schemas/POSTBaseModelResponse"
         - type: object
           properties:
             reportCardKey:
@@ -11146,7 +11146,7 @@ components:
               type: string
     PATCHReportCardRequest:
       allOf:
-        - $ref: "#/components/schemas/PATCHClusterRequest"
+        - $ref: "#/components/schemas/PATCHBaseModelRequest"
         - type: object
           properties:
             setReportCardKey:
@@ -12222,7 +12222,7 @@ components:
               type: string
     PATCHReportCardResponse:
       allOf:
-        - $ref: "#/components/schemas/PATCHClusterResponse"
+        - $ref: "#/components/schemas/PATCHBaseModelResponse"
         - type: object
           properties:
             setReportCardKey:
@@ -13298,7 +13298,7 @@ components:
               type: string
     SearchReportCardResponse:
       allOf:
-        - $ref: "#/components/schemas/SearchClusterResponse"
+        - $ref: "#/components/schemas/SearchBaseModelResponse"
         - type: array
           items:
             type: object
@@ -15471,7 +15471,7 @@ components:
               type: string
     GETReportCardResponse:
       allOf:
-        - $ref: "#/components/schemas/GETClusterResponse"
+        - $ref: "#/components/schemas/GETBaseModelResponse"
         - type: object
           properties:
             reportCardKey:
@@ -15785,7 +15785,7 @@ components:
         - type: string
     POSTHtmlPartRequest:
       allOf:
-        - $ref: "#/components/schemas/POSTClusterRequest"
+        - $ref: "#/components/schemas/POSTBaseModelRequest"
         - type: object
           properties:
             htmlPartKey:
@@ -15852,7 +15852,7 @@ components:
               type: string
     POSTHtmlPartResponse:
       allOf:
-        - $ref: "#/components/schemas/POSTClusterResponse"
+        - $ref: "#/components/schemas/POSTBaseModelResponse"
         - type: object
           properties:
             htmlPartKey:
@@ -15919,7 +15919,7 @@ components:
               type: string
     PATCHHtmlPartRequest:
       allOf:
-        - $ref: "#/components/schemas/PATCHClusterRequest"
+        - $ref: "#/components/schemas/PATCHBaseModelRequest"
         - type: object
           properties:
             setHtmlPartKey:
@@ -16144,7 +16144,7 @@ components:
               type: string
     PATCHHtmlPartResponse:
       allOf:
-        - $ref: "#/components/schemas/PATCHClusterResponse"
+        - $ref: "#/components/schemas/PATCHBaseModelResponse"
         - type: object
           properties:
             setHtmlPartKey:
@@ -16369,7 +16369,7 @@ components:
               type: string
     SearchHtmlPartResponse:
       allOf:
-        - $ref: "#/components/schemas/SearchClusterResponse"
+        - $ref: "#/components/schemas/SearchBaseModelResponse"
         - type: array
           items:
             type: object
@@ -16834,7 +16834,7 @@ components:
               type: string
     GETHtmlPartResponse:
       allOf:
-        - $ref: "#/components/schemas/GETClusterResponse"
+        - $ref: "#/components/schemas/GETBaseModelResponse"
         - type: object
           properties:
             htmlPartKey:
@@ -16933,7 +16933,7 @@ components:
                 type: string
     POSTPageDesignRequest:
       allOf:
-        - $ref: "#/components/schemas/POSTClusterRequest"
+        - $ref: "#/components/schemas/POSTBaseModelRequest"
         - type: object
           properties:
             pageDesignKey:
@@ -16958,7 +16958,7 @@ components:
               type: string
     POSTPageDesignResponse:
       allOf:
-        - $ref: "#/components/schemas/POSTClusterResponse"
+        - $ref: "#/components/schemas/POSTBaseModelResponse"
         - type: object
           properties:
             pageDesignKey:
@@ -16983,7 +16983,7 @@ components:
               type: string
     PATCHPageDesignRequest:
       allOf:
-        - $ref: "#/components/schemas/PATCHClusterRequest"
+        - $ref: "#/components/schemas/PATCHBaseModelRequest"
         - type: object
           properties:
             setPageDesignKey:
@@ -17067,7 +17067,7 @@ components:
               type: string
     PATCHPageDesignResponse:
       allOf:
-        - $ref: "#/components/schemas/PATCHClusterResponse"
+        - $ref: "#/components/schemas/PATCHBaseModelResponse"
         - type: object
           properties:
             setPageDesignKey:
@@ -17151,7 +17151,7 @@ components:
               type: string
     SearchPageDesignResponse:
       allOf:
-        - $ref: "#/components/schemas/SearchClusterResponse"
+        - $ref: "#/components/schemas/SearchBaseModelResponse"
         - type: array
           items:
             type: object
@@ -17322,7 +17322,7 @@ components:
               type: string
     GETPageDesignResponse:
       allOf:
-        - $ref: "#/components/schemas/GETClusterResponse"
+        - $ref: "#/components/schemas/GETBaseModelResponse"
         - type: object
           properties:
             pageDesignKey:

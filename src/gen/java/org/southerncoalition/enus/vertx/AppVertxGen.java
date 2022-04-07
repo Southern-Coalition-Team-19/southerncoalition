@@ -1,61 +1,128 @@
 package org.southerncoalition.enus.vertx;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
-import org.southerncoalition.enus.request.api.ApiRequest;
+import org.southerncoalition.enus.model.base.BaseModel;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import org.slf4j.LoggerFactory;
+import org.computate.search.serialize.ComputateLocalDateDeserializer;
 import java.util.HashMap;
+import org.southerncoalition.enus.config.ConfigKeys;
 import org.apache.commons.lang3.StringUtils;
 import java.text.NumberFormat;
-import io.vertx.core.logging.LoggerFactory;
 import java.util.ArrayList;
-import org.apache.commons.collections.CollectionUtils;
+import org.computate.vertx.api.ApiRequest;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.vertx.core.logging.Logger;
-import org.southerncoalition.enus.cluster.Cluster;
 import java.math.RoundingMode;
-import org.southerncoalition.enus.wrap.Wrap;
-import org.southerncoalition.enus.writer.AllWriter;
+import org.slf4j.Logger;
 import java.math.MathContext;
-import org.apache.commons.text.StringEscapeUtils;
+import io.vertx.core.Promise;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.southerncoalition.enus.request.SiteRequestEnUS;
+import io.vertx.core.Future;
+import org.computate.search.serialize.ComputateZonedDateTimeDeserializer;
 import java.util.Objects;
+import org.computate.search.serialize.ComputateLocalDateSerializer;
 import io.vertx.core.json.JsonArray;
+import java.util.List;
+import org.computate.search.wrap.Wrap;
 import io.vertx.core.AbstractVerticle;
 import org.apache.commons.lang3.math.NumberUtils;
 import java.util.Optional;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.computate.search.serialize.ComputateZonedDateTimeSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 
 /**	
- * <br/><a href="http://localhost:8983/solr/computate/select?q=*:*&fq=partEstClasse_indexed_boolean:true&fq=classeNomCanonique_enUS_indexed_string:org.southerncoalition.enus.vertx.AppVertx&fq=classeEtendGen_indexed_boolean:true">Find the class  in Solr. </a>
- * <br/>
+ * <br><a href="http://localhost:8983/solr/computate/select?q=*:*&fq=partEstClasse_indexed_boolean:true&fq=classeNomCanonique_enUS_indexed_string:org.southerncoalition.enus.vertx.AppVertx&fq=classeEtendGen_indexed_boolean:true">Find the class  in Solr. </a>
+ * <br>
  **/
 public abstract class AppVertxGen<DEV> extends AbstractVerticle {
-	protected static final Logger LOGGER = LoggerFactory.getLogger(AppVertx.class);
+
+/*
+CREATE TABLE SiteUser(
+	pk bigserial primary key
+	, inheritPk text
+	, created timestamp with time zone
+	, archived boolean
+	, deleted boolean
+	, sessionId text
+	, userKey bigint
+	, userId text
+	, userName text
+	, userEmail text
+	, userFirstName text
+	, userLastName text
+	, userFullName text
+	, seeArchived boolean
+	, seeDeleted boolean
+	);
+CREATE TABLE ReportCard(
+	pk bigserial primary key
+	, inheritPk text
+	, created timestamp with time zone
+	, archived boolean
+	, deleted boolean
+	, sessionId text
+	, userKey bigint
+	);
+CREATE TABLE SiteAgency(
+	pk bigserial primary key
+	, inheritPk text
+	, created timestamp with time zone
+	, archived boolean
+	, deleted boolean
+	, sessionId text
+	, userKey bigint
+	);
+CREATE TABLE SiteState(
+	pk bigserial primary key
+	, inheritPk text
+	, created timestamp with time zone
+	, archived boolean
+	, deleted boolean
+	, sessionId text
+	, userKey bigint
+	);
+
+DROP TABLE SiteUser CASCADE;
+DROP TABLE ReportCard CASCADE;
+DROP TABLE SiteAgency CASCADE;
+DROP TABLE SiteState CASCADE;
+*/
+
+	protected static final Logger LOG = LoggerFactory.getLogger(AppVertx.class);
 	public static final String configureDataConnectionError1 = "Could not open the database client connection. ";
 	public static final String configureDataConnectionError = configureDataConnectionError1;
 	public static final String configureDataConnectionSuccess1 = "The database client connection was successful. ";
 	public static final String configureDataConnectionSuccess = configureDataConnectionSuccess1;
-	public static final String configureDataInitError1 = "Could not initialize the database tables. ";
+	public static final String configureDataInitError1 = "Could not initialize the database. ";
 	public static final String configureDataInitError = configureDataInitError1;
-	public static final String configureDataInitSuccess1 = "The database tables were created successfully. ";
+	public static final String configureDataInitSuccess1 = "The database was initialized successfully. ";
 	public static final String configureDataInitSuccess = configureDataInitSuccess1;
-
-	public static final String configureClusterDataError1 = "Could not configure the shared cluster data. ";
-	public static final String configureClusterDataError = configureClusterDataError1;
-	public static final String configureClusterDataSuccess1 = "The shared cluster data was configured successfully. ";
-	public static final String configureClusterDataSuccess = configureClusterDataSuccess1;
 
 	public static final String configureOpenApiError1 = "Could not configure the auth server and API. ";
 	public static final String configureOpenApiError = configureOpenApiError1;
 	public static final String configureOpenApiSuccess1 = "The auth server and API was configured successfully. ";
 	public static final String configureOpenApiSuccess = configureOpenApiSuccess1;
 
+	public static final String configureConfigComplete1 = "The config was configured successfully. ";
+	public static final String configureConfigComplete = configureConfigComplete1;
+	public static final String configureConfigFail1 = "Could not configure the config(). ";
+	public static final String configureConfigFail = configureConfigFail1;
+
+	public static final String configureSharedWorkerExecutorFail1 = "Could not configure the shared worker executor. ";
+	public static final String configureSharedWorkerExecutorFail = configureSharedWorkerExecutorFail1;
+	public static final String configureSharedWorkerExecutorComplete1 = "The shared worker executor \"{}\" was configured successfully. ";
+	public static final String configureSharedWorkerExecutorComplete = configureSharedWorkerExecutorComplete1;
+
+	public static final String configureHealthChecksComplete1 = "The health checks were configured successfully. ";
+	public static final String configureHealthChecksComplete = configureHealthChecksComplete1;
+	public static final String configureHealthChecksFail1 = "Could not configure the health checks. ";
+	public static final String configureHealthChecksFail = configureHealthChecksFail1;
 	public static final String configureHealthChecksErrorDatabase1 = "The database is not configured properly. ";
 	public static final String configureHealthChecksErrorDatabase = configureHealthChecksErrorDatabase1;
 	public static final String configureHealthChecksEmptySolr1 = "The Solr search engine is empty. ";
@@ -65,32 +132,52 @@ public abstract class AppVertxGen<DEV> extends AbstractVerticle {
 	public static final String configureHealthChecksErrorVertx1 = "The Vert.x application is not configured properly. ";
 	public static final String configureHealthChecksErrorVertx = configureHealthChecksErrorVertx1;
 
+	public static final String configureWebsocketsComplete1 = "Configure websockets succeeded. ";
+	public static final String configureWebsocketsComplete = configureWebsocketsComplete1;
+	public static final String configureWebsocketsFail1 = "Configure websockets failed. ";
+	public static final String configureWebsocketsFail = configureWebsocketsFail1;
+
+	public static final String configureEmailComplete1 = "Configure sending email succeeded. ";
+	public static final String configureEmailComplete = configureEmailComplete1;
+	public static final String configureEmailFail1 = "Configure sending email failed. ";
+	public static final String configureEmailFail = configureEmailFail1;
+
+	public static final String configureApiFail1 = "The API was not configured properly. ";
+	public static final String configureApiFail = configureApiFail1;
+	public static final String configureApiComplete1 = "The API was configured properly. ";
+	public static final String configureApiComplete = configureApiComplete1;
+
+	public static final String configureUiFail1 = "The UI was not configured properly. ";
+	public static final String configureUiFail = configureUiFail1;
+	public static final String configureUiComplete1 = "The UI was configured properly. ";
+	public static final String configureUiComplete = configureUiComplete1;
+
+	public static final String configureCamelFail1 = "The Camel Component was not configured properly. ";
+	public static final String configureCamelFail = configureCamelFail1;
+	public static final String configureCamelComplete1 = "The Camel Component was configured properly. ";
+	public static final String configureCamelComplete = configureCamelComplete1;
+
 	public static final String startServerErrorServer1 = "The server is not configured properly. ";
 	public static final String startServerErrorServer = startServerErrorServer1;
-	public static final String startServerSuccessServer1 = "The HTTP server is running: %s:%s";
+	public static final String startServerSuccessServer1 = "The HTTP server is running: %s";
 	public static final String startServerSuccessServer = startServerSuccessServer1;
-	public static final String startServerBeforeServer1 = "HTTP server starting: %s://%s:%s";
+	public static final String startServerBeforeServer1 = "HTTP server starting: %s";
 	public static final String startServerBeforeServer = startServerBeforeServer1;
 	public static final String startServerSsl1 = "Configuring SSL: %s";
 	public static final String startServerSsl = startServerSsl1;
 
-	public static final String closeDataError1 = "Could not close the database client connection. ";
-	public static final String closeDataError = closeDataError1;
-	public static final String closeDataSuccess1 = "The database client connextion was closed. ";
-	public static final String closeDataSuccess = closeDataSuccess1;
+	public static final String stopFail1 = "Could not close the database client connection. ";
+	public static final String stopFail = stopFail1;
+	public static final String stopComplete1 = "The database client connection was closed. ";
+	public static final String stopComplete = stopComplete1;
 
 
 	//////////////
 	// initDeep //
 	//////////////
 
-	protected boolean alreadyInitializedAppVertx = false;
-
 	public AppVertx initDeepAppVertx(SiteRequestEnUS siteRequest_) {
-		if(!alreadyInitializedAppVertx) {
-			alreadyInitializedAppVertx = true;
-			initDeepAppVertx();
-		}
+		initDeepAppVertx();
 		return (AppVertx)this;
 	}
 
@@ -115,9 +202,13 @@ public abstract class AppVertxGen<DEV> extends AbstractVerticle {
 		for(String v : vars) {
 			if(o == null)
 				o = obtainAppVertx(v);
-			else if(o instanceof Cluster) {
-				Cluster cluster = (Cluster)o;
-				o = cluster.obtainForClass(v);
+			else if(o instanceof BaseModel) {
+				BaseModel baseModel = (BaseModel)o;
+				o = baseModel.obtainForClass(v);
+			}
+			else if(o instanceof Map) {
+				Map<?, ?> map = (Map<?, ?>)o;
+				o = map.get(v);
 			}
 		}
 		return o;
@@ -131,23 +222,23 @@ public abstract class AppVertxGen<DEV> extends AbstractVerticle {
 	}
 
 	///////////////
-	// attribute //
+	// relate //
 	///////////////
 
-	public boolean attributeForClass(String var, Object val) {
+	public boolean relateForClass(String var, Object val) {
 		String[] vars = StringUtils.split(var, ".");
 		Object o = null;
 		for(String v : vars) {
 			if(o == null)
-				o = attributeAppVertx(v, val);
-			else if(o instanceof Cluster) {
-				Cluster cluster = (Cluster)o;
-				o = cluster.attributeForClass(v, val);
+				o = relateAppVertx(v, val);
+			else if(o instanceof BaseModel) {
+				BaseModel baseModel = (BaseModel)o;
+				o = baseModel.relateForClass(v, val);
 			}
 		}
 		return o != null;
 	}
-	public Object attributeAppVertx(String var, Object val) {
+	public Object relateAppVertx(String var, Object val) {
 		AppVertx oAppVertx = (AppVertx)this;
 		switch(var) {
 			default:
@@ -170,13 +261,13 @@ public abstract class AppVertxGen<DEV> extends AbstractVerticle {
 	}
 
 	////////////////
-	// staticSolr //
+	// staticSearch //
 	////////////////
 
-	public static Object staticSolrForClass(String entityVar, SiteRequestEnUS siteRequest_, Object o) {
-		return staticSolrAppVertx(entityVar,  siteRequest_, o);
+	public static Object staticSearchForClass(String entityVar, SiteRequestEnUS siteRequest_, Object o) {
+		return staticSearchAppVertx(entityVar,  siteRequest_, o);
 	}
-	public static Object staticSolrAppVertx(String entityVar, SiteRequestEnUS siteRequest_, Object o) {
+	public static Object staticSearchAppVertx(String entityVar, SiteRequestEnUS siteRequest_, Object o) {
 		switch(entityVar) {
 			default:
 				return null;
@@ -184,13 +275,13 @@ public abstract class AppVertxGen<DEV> extends AbstractVerticle {
 	}
 
 	///////////////////
-	// staticSolrStr //
+	// staticSearchStr //
 	///////////////////
 
-	public static String staticSolrStrForClass(String entityVar, SiteRequestEnUS siteRequest_, Object o) {
-		return staticSolrStrAppVertx(entityVar,  siteRequest_, o);
+	public static String staticSearchStrForClass(String entityVar, SiteRequestEnUS siteRequest_, Object o) {
+		return staticSearchStrAppVertx(entityVar,  siteRequest_, o);
 	}
-	public static String staticSolrStrAppVertx(String entityVar, SiteRequestEnUS siteRequest_, Object o) {
+	public static String staticSearchStrAppVertx(String entityVar, SiteRequestEnUS siteRequest_, Object o) {
 		switch(entityVar) {
 			default:
 				return null;
@@ -198,64 +289,17 @@ public abstract class AppVertxGen<DEV> extends AbstractVerticle {
 	}
 
 	//////////////////
-	// staticSolrFq //
+	// staticSearchFq //
 	//////////////////
 
-	public static String staticSolrFqForClass(String entityVar, SiteRequestEnUS siteRequest_, String o) {
-		return staticSolrFqAppVertx(entityVar,  siteRequest_, o);
+	public static String staticSearchFqForClass(String entityVar, SiteRequestEnUS siteRequest_, String o) {
+		return staticSearchFqAppVertx(entityVar,  siteRequest_, o);
 	}
-	public static String staticSolrFqAppVertx(String entityVar, SiteRequestEnUS siteRequest_, String o) {
+	public static String staticSearchFqAppVertx(String entityVar, SiteRequestEnUS siteRequest_, String o) {
 		switch(entityVar) {
 			default:
 				return null;
 		}
-	}
-
-	/////////////
-	// define //
-	/////////////
-
-	public boolean defineForClass(String var, String val) {
-		String[] vars = StringUtils.split(var, ".");
-		Object o = null;
-		if(val != null) {
-			for(String v : vars) {
-				if(o == null)
-					o = defineAppVertx(v, val);
-				else if(o instanceof Cluster) {
-					Cluster cluster = (Cluster)o;
-					o = cluster.defineForClass(v, val);
-				}
-			}
-		}
-		return o != null;
-	}
-	public Object defineAppVertx(String var, String val) {
-		switch(var) {
-			default:
-				return null;
-		}
-	}
-
-	//////////////
-	// hashCode //
-	//////////////
-
-	@Override public int hashCode() {
-		return Objects.hash();
-	}
-
-	////////////
-	// equals //
-	////////////
-
-	@Override public boolean equals(Object o) {
-		if(this == o)
-			return true;
-		if(!(o instanceof AppVertx))
-			return false;
-		AppVertx that = (AppVertx)o;
-		return true;
 	}
 
 	//////////////
@@ -264,10 +308,20 @@ public abstract class AppVertxGen<DEV> extends AbstractVerticle {
 
 	@Override public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("AppVertx { ");
-		sb.append(" }");
 		return sb.toString();
 	}
 
-	public static final String[] AppVertxVals = new String[] { configureDataConnectionError1, configureDataConnectionSuccess1, configureDataInitError1, configureDataInitSuccess1, configureClusterDataError1, configureClusterDataSuccess1, configureOpenApiError1, configureOpenApiSuccess1, configureHealthChecksErrorDatabase1, configureHealthChecksEmptySolr1, configureHealthChecksErrorSolr1, configureHealthChecksErrorVertx1, startServerErrorServer1, startServerSuccessServer1, startServerBeforeServer1, startServerSsl1, closeDataError1, closeDataSuccess1 };
+	public static final String[] AppVertxVals = new String[] { configureDataConnectionError1, configureDataConnectionSuccess1, configureDataInitError1, configureDataInitSuccess1, configureOpenApiError1, configureOpenApiSuccess1, configureConfigComplete1, configureConfigFail1, configureSharedWorkerExecutorFail1, configureSharedWorkerExecutorComplete1, configureHealthChecksComplete1, configureHealthChecksFail1, configureHealthChecksErrorDatabase1, configureHealthChecksEmptySolr1, configureHealthChecksErrorSolr1, configureHealthChecksErrorVertx1, configureWebsocketsComplete1, configureWebsocketsFail1, configureEmailComplete1, configureEmailFail1, configureApiFail1, configureApiComplete1, configureUiFail1, configureUiComplete1, configureCamelFail1, configureCamelComplete1, startServerErrorServer1, startServerSuccessServer1, startServerBeforeServer1, startServerSsl1, stopFail1, stopComplete1 };
+
+
+
+	public static String displayNameForClass(String var) {
+		return AppVertx.displayNameAppVertx(var);
+	}
+	public static String displayNameAppVertx(String var) {
+		switch(var) {
+		default:
+			return null;
+		}
+	}
 }

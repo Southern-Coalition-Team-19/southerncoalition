@@ -1,61 +1,57 @@
 package org.southerncoalition.enus.vertx;
 
-import java.io.File;
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+import java.net.URLDecoder;
+import java.text.Normalizer;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import org.apache.camel.CamelContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.response.QueryResponse;
-import org.southerncoalition.enus.agency.SiteAgencyEnUSGenApiService;
-import org.southerncoalition.enus.cluster.ClusterEnUSGenApiService;
-import org.southerncoalition.enus.config.SiteConfig;
-import org.southerncoalition.enus.context.SiteContextEnUS;
-import org.southerncoalition.enus.design.PageDesignEnUSGenApiService;
-import org.southerncoalition.enus.html.part.HtmlPartEnUSGenApiService;
-import org.southerncoalition.enus.java.LocalDateSerializer;
-import org.southerncoalition.enus.java.LocalTimeSerializer;
-import org.southerncoalition.enus.java.ZonedDateTimeSerializer;
-import org.southerncoalition.enus.reportcard.ReportCardEnUSGenApiService;
+import org.computate.vertx.handlebars.AuthHelpers;
+import org.computate.vertx.handlebars.DateHelpers;
+import org.computate.vertx.handlebars.SiteHelpers;
+import org.computate.vertx.openapi.OpenApi3Generator;
+import org.computate.vertx.verticle.EmailVerticle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.southerncoalition.enus.config.ConfigKeys;
+import org.southerncoalition.enus.model.agency.SiteAgencyEnUSGenApiService;
+import org.southerncoalition.enus.model.reportcard.ReportCardEnUSGenApiService;
+import org.southerncoalition.enus.model.state.SiteStateEnUSGenApiService;
+import org.southerncoalition.enus.model.user.SiteUserEnUSGenApiService;
+import org.southerncoalition.enus.page.HomePage;
 import org.southerncoalition.enus.request.SiteRequestEnUS;
-import org.southerncoalition.enus.state.SiteStateEnUSGenApiService;
-import org.southerncoalition.enus.user.SiteUserEnUSGenApiService;
 
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.github.jknack.handlebars.Handlebars;
+import com.github.jknack.handlebars.helper.ConditionalHelpers;
+import com.github.jknack.handlebars.helper.StringHelpers;
 
+import io.vertx.config.ConfigRetriever;
+import io.vertx.config.ConfigRetrieverOptions;
+import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.WorkerExecutor;
-import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.JksOptions;
-import io.vertx.core.shareddata.AsyncMap;
-import io.vertx.core.shareddata.SharedData;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.ext.auth.oauth2.AccessToken;
+import io.vertx.ext.auth.authorization.AuthorizationProvider;
 import io.vertx.ext.auth.oauth2.OAuth2Auth;
-import io.vertx.ext.auth.oauth2.OAuth2ClientOptions;
 import io.vertx.ext.auth.oauth2.OAuth2FlowType;
+import io.vertx.ext.auth.oauth2.OAuth2Options;
+import io.vertx.ext.auth.oauth2.authorization.KeycloakAuthorization;
 import io.vertx.ext.auth.oauth2.providers.OpenIDConnectAuth;
 import io.vertx.ext.bridge.PermittedOptions;
 import io.vertx.ext.healthchecks.HealthCheckHandler;
@@ -63,661 +59,842 @@ import io.vertx.ext.healthchecks.Status;
 import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailConfig;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
-import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
+import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.handler.OAuth2AuthHandler;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.handler.StaticHandler;
-import io.vertx.ext.web.handler.sockjs.BridgeOptions;
+import io.vertx.ext.web.handler.TemplateHandler;
+import io.vertx.ext.web.handler.sockjs.SockJSBridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
+import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.sstore.LocalSessionStore;
+import io.vertx.ext.web.templ.handlebars.HandlebarsTemplateEngine;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.pgclient.PgPool;
 import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
 import io.vertx.sqlclient.PoolOptions;
-import io.vertx.sqlclient.SqlConnection;
-import io.vertx.sqlclient.Transaction;
 
-/**	
- *	A Java class to start the Vert.x application as a main method. 
- **/
+/**
+ * Description: A Java class to start the Vert.x application as a main method. 
+ * Keyword: classSimpleNameVerticle
+ * Map.Integer.classSort: 10
+ */
 public class AppVertx extends AppVertxGen<AbstractVerticle> {
 
-	public final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+	private static final Logger LOG = LoggerFactory.getLogger(AppVertx.class);
 
-	/**
-	 * A SQL query for creating a database table "c" to store any type of object in the application. 
-	 **/
-	public static final String SQL_createTableC = "create table if not exists c(pk bigserial primary key, current boolean, canonical_name text, created timestamp with time zone, user_id text); ";
+	private Integer siteInstances;
 
-	/**
-	 * A SQL query for creating a unique index on the "c" table based on the pk, canonical_name, and user_id fields for faster lookup. 
-	 **/
-	public static final String SQL_uniqueIndexC = "create unique index if not exists c_index_user on c(pk, canonical_name, user_id); ";
+	private Integer workerPoolSize;
 
-	/**
-	 * A SQL query for creating a database table "a" to store relations (like entity relations) between one other record in the "c" table with another record in the "c" table. 
-	 **/
-	public static final String SQL_createTableA = "create table if not exists a(pk bigserial primary key, pk1 bigint, entity1 text, pk2 bigint, entity2 text, current boolean, created timestamp with time zone, constraint a_constraint unique (pk1, entity1, pk2, entity2)); ";
+	private Integer jdbcMaxPoolSize;
 
-	/**
-	 * A SQL query for creating an index on the "a" table based on fields for faster lookup. 
-	 **/
-	public static final String SQL_uniqueIndexA = "create index if not exists a_index on a(pk1, pk2, current); ";
+	private Integer jdbcMaxWaitQueueSize;
 
-	/**
-	 * A SQL query for creating a database table "d" to store String values to define fields in an instance of a class based on a record in the "c" table. 
-	 **/
-	public static final String SQL_createTableD = "create table if not exists d(pk bigserial primary key, pk_c bigint, path text, value text, current boolean, created timestamp with time zone, constraint d_constraint unique (pk_c, path)); ";
-
-	/**
-	 * A SQL query for creating an index on the "d" table based on fields for faster lookup. 
-	 **/
-	public static final String SQL_uniqueIndexD = "create index if not exists d_index on d(pk_c, current); ";
-
-	/**
-	 * Concatenate all of the SQL together to execute when the server starts. 
-	 **/
-	public static final String SQL_initAll = SQL_createTableC + SQL_uniqueIndexC + SQL_createTableA + SQL_uniqueIndexA + SQL_createTableD + SQL_uniqueIndexD;
+	private CamelContext camelContext;
 
 	/**
 	 * A io.vertx.ext.jdbc.JDBCClient for connecting to the relational database PostgreSQL. 
-	 **/
+	 */
 	private PgPool pgPool;
 
-	/**
-	 * A site context object for storing information about the entire site in English. 
-	 **/
-	SiteContextEnUS siteContextEnUS;
-
-	/**
-	 * For logging information and errors in the application. 
-	 **/
-	private static final Logger LOGGER = LoggerFactory.getLogger(AppVertx.class);
-
-	/**	
-	 *	The main method for the Vert.x application that runs the Vert.x Runner class
-	 **/
-	public static void  main(String[] args) {
-		run();
+	public PgPool getPgPool() {
+		return pgPool;
 	}
 
-	public static void  run() {
-		Class<?> c = AppVertx.class;
-		JsonObject zkConfig = new JsonObject();
-		String zookeeperHostName = System.getenv("zookeeperHostName");
-		Integer zookeeperPort = Integer.parseInt(System.getenv("zookeeperPort"));
-		Integer clusterPort = System.getenv("clusterPort") == null ? null : Integer.parseInt(System.getenv("clusterPort"));
-		String clusterHost = System.getenv("clusterHost");
-		Integer clusterPublicPort = System.getenv("clusterPublicPort") == null ? null : Integer.parseInt(System.getenv("clusterPublicPort"));
-		Integer siteInstances = System.getenv("siteInstances") == null ? 1 : Integer.parseInt(System.getenv("siteInstances"));
-		String clusterPublicHost = System.getenv("clusterPublicHost");
-		String zookeeperHosts = zookeeperHostName + ":" + zookeeperPort;
-		zkConfig.put("zookeeperHosts", zookeeperHosts);
-		zkConfig.put("sessionTimeout", 20000);
-		zkConfig.put("connectTimeout", 3000);
-		zkConfig.put("rootPath", "io.vertx");
-		zkConfig.put("retry", new JsonObject() {
-			{
-				put("initialSleepTime", 100);
-				put("intervalTimes", 10000);
-				put("maxTimes", 3);
+	public void setPgPool(PgPool pgPool) {
+		this.pgPool = pgPool;
+	}
+
+	private WebClient webClient;
+
+	private Router router;
+
+	WorkerExecutor workerExecutor;
+
+	OAuth2Auth oauth2AuthenticationProvider;
+
+	AuthorizationProvider authorizationProvider;
+
+	HandlebarsTemplateEngine templateEngine;
+
+	/**
+	 * The main method for the Vert.x application that runs the Vert.x Runner class
+	 */
+	public static void main(String[] args) {
+		Vertx vertx = Vertx.vertx();
+		String configPath = System.getenv(ConfigKeys.CONFIG_PATH);
+		configureConfig(vertx).onSuccess(config -> {
+			try {
+				Boolean runOpenApi3Generator = Optional.ofNullable(config.getBoolean(ConfigKeys.RUN_OPENAPI3_GENERATOR)).orElse(false);
+				if(runOpenApi3Generator)
+					runOpenApi3Generator(args, vertx, config);
+				else
+					run(config);
+			} catch(Exception ex) {
+				LOG.error(String.format("Error loading config: %s", configPath), ex);
+				vertx.close();
 			}
+		}).onFailure(ex -> {
+			LOG.error(String.format("Error loading config: %s", configPath), ex);
+			vertx.close();
 		});
-		ClusterManager gestionnaireCluster = new ZookeeperClusterManager(zkConfig);
-		VertxOptions optionsVertx = new VertxOptions();
-		// For OpenShift
+	}
+
+	public static void runOpenApi3Generator(String[] args, Vertx vertx, JsonObject config) {
+		OpenApi3Generator api = new OpenApi3Generator();
+		WebClient webClient = WebClient.create(vertx);
+		SiteRequestEnUS siteRequest = new SiteRequestEnUS();
+		siteRequest.setConfig(config);
+		siteRequest.setWebClient(webClient);
+		api.setWebClient(webClient);
+		api.setConfig(config);
+		siteRequest.initDeepSiteRequestEnUS();
+		api.initDeepOpenApi3Generator(siteRequest);
+		api.writeOpenApi().onSuccess(a -> {
+			LOG.info("Write OpenAPI completed. ");
+			vertx.close();
+		}).onFailure(ex -> {
+			LOG.error("Write OpenAPI failed. ", ex);
+			vertx.close();
+		});
+	}
+
+	public static void run(JsonObject config) {
+		Boolean enableZookeeperCluster = Optional.ofNullable(config.getBoolean(ConfigKeys.ENABLE_ZOOKEEPER_CLUSTER)).orElse(false);
+		VertxOptions vertxOptions = new VertxOptions();
 		EventBusOptions eventBusOptions = new EventBusOptions();
-		String hostname = System.getenv("HOSTNAME");
-		String openshiftService = System.getenv("openshiftService");
-		if(clusterHost == null) {
-			clusterHost = hostname;
-		}
-		if(clusterPublicHost == null) {
-			if(hostname != null && openshiftService != null) {
-				clusterPublicHost = hostname + "." + openshiftService;
+
+		if(enableZookeeperCluster) {
+			JsonObject zkConfig = new JsonObject();
+			String hostname = config.getString(ConfigKeys.HOSTNAME);
+			String openshiftService = config.getString(ConfigKeys.OPENSHIFT_SERVICE);
+			String zookeeperHostName = config.getString(ConfigKeys.ZOOKEEPER_HOST_NAME);
+			Integer zookeeperPort = config.getInteger(ConfigKeys.ZOOKEEPER_PORT);
+			String zookeeperHosts = Optional.ofNullable(config.getString(ConfigKeys.ZOOKEEPER_HOSTS)).orElse(zookeeperHostName + ":" + zookeeperPort);
+			String clusterHostName = config.getString(ConfigKeys.CLUSTER_HOST_NAME);
+			Integer clusterPort = config.getInteger(ConfigKeys.CLUSTER_PORT);
+			String clusterPublicHostName = config.getString(ConfigKeys.CLUSTER_PUBLIC_HOST_NAME);
+			Integer clusterPublicPort = config.getInteger(ConfigKeys.CLUSTER_PUBLIC_PORT);
+			zkConfig.put("zookeeperHosts", zookeeperHosts);
+			zkConfig.put("sessionTimeout", 500000);
+			zkConfig.put("connectTimeout", 3000);
+			zkConfig.put("rootPath", "eventphenomenon");
+			zkConfig.put("retry", new JsonObject() {
+				{
+					put("initialSleepTime", 100);
+					put("intervalTimes", 10000);
+					put("maxTimes", 5);
+				}
+			});
+			ClusterManager clusterManager = new ZookeeperClusterManager(zkConfig);
+
+			if(clusterHostName == null) {
+				clusterHostName = hostname;
 			}
+			if(clusterPublicHostName == null) {
+				if(hostname != null && openshiftService != null) {
+					clusterPublicHostName = hostname + "." + openshiftService;
+				}
+			}
+			if(clusterHostName != null) {
+				LOG.info(String.format("%s: %s", ConfigKeys.CLUSTER_HOST_NAME, clusterHostName));
+				eventBusOptions.setHost(clusterHostName);
+			}
+			if(clusterPort != null) {
+				LOG.info(String.format("%s: %s", ConfigKeys.CLUSTER_PORT, clusterPort));
+				eventBusOptions.setPort(clusterPort);
+			}
+			if(clusterPublicHostName != null) {
+				LOG.info(String.format("%s: %s", ConfigKeys.CLUSTER_PUBLIC_HOST_NAME, clusterPublicHostName));
+				eventBusOptions.setClusterPublicHost(clusterPublicHostName);
+			}
+			if(clusterPublicPort != null) {
+				LOG.info(String.format("%s: %s", ConfigKeys.CLUSTER_PUBLIC_PORT, clusterPublicPort));
+				eventBusOptions.setClusterPublicPort(clusterPublicPort);
+			}
+			vertxOptions.setClusterManager(clusterManager);
 		}
-		if(clusterHost != null) {
-			LOGGER.info(String.format("clusterHost: %s", clusterHost));
-			eventBusOptions.setHost(clusterHost);
-		}
-		if(clusterPort != null) {
-			LOGGER.info(String.format("clusterPort: %s", clusterPort));
-			eventBusOptions.setPort(clusterPort);
-		}
-		if(clusterPublicHost != null) {
-			LOGGER.info(String.format("clusterPublicHost: %s", clusterPublicHost));
-			eventBusOptions.setClusterPublicHost(clusterPublicHost);
-		}
-		if(clusterPublicPort != null) {
-			LOGGER.info(String.format("clusterPublicPort: %s", clusterPublicPort));
-			eventBusOptions.setClusterPublicPort(clusterPublicPort);
-		}
-		eventBusOptions.setClustered(true);
-		optionsVertx.setEventBusOptions(eventBusOptions);
-		optionsVertx.setClusterManager(gestionnaireCluster);
-		DeploymentOptions deploymentOptions = new DeploymentOptions();
-		deploymentOptions.setInstances(siteInstances);
-
-		String verticleID = c.getName();
-
+		Long vertxWarningExceptionSeconds = config.getLong(ConfigKeys.VERTX_WARNING_EXCEPTION_SECONDS);
+		Integer siteInstances = config.getInteger(ConfigKeys.SITE_INSTANCES);
+		vertxOptions.setEventBusOptions(eventBusOptions);
+		vertxOptions.setWarningExceptionTime(vertxWarningExceptionSeconds);
+		vertxOptions.setWarningExceptionTimeUnit(TimeUnit.SECONDS);
+		vertxOptions.setWorkerPoolSize(config.getInteger(ConfigKeys.WORKER_POOL_SIZE));
 		Consumer<Vertx> runner = vertx -> {
-			vertx.deployVerticle(verticleID, deploymentOptions);
-		};
-		Vertx.clusteredVertx(optionsVertx, res -> {
-			if (res.succeeded()) {
-				Vertx vertx = res.result();
-				EventBus eventBus = vertx.eventBus();
-				LOGGER.info("We now have a clustered event bus: {}", eventBus);
-				runner.accept(vertx);
-			} else {
-				res.cause().printStackTrace();
+			try {
+				DeploymentOptions deploymentOptions = new DeploymentOptions();
+				deploymentOptions.setInstances(siteInstances);
+				deploymentOptions.setConfig(config);
+	
+				DeploymentOptions emailVerticleDeploymentOptions = new DeploymentOptions();
+				emailVerticleDeploymentOptions.setConfig(config);
+				emailVerticleDeploymentOptions.setWorker(true);
+	
+				DeploymentOptions ceylonVerticleDeploymentOptions = new DeploymentOptions();
+				ceylonVerticleDeploymentOptions.setConfig(config);
+				ceylonVerticleDeploymentOptions.setInstances(1);
+	
+				vertx.deployVerticle(AppVertx.class, deploymentOptions).onSuccess(a -> {
+					LOG.info("Started main verticle. ");
+					vertx.deployVerticle(EmailVerticle.class, emailVerticleDeploymentOptions).onSuccess(c -> {
+						LOG.info("Started email verticle. ");
+					}).onFailure(ex -> {
+						LOG.error("Failed to start worker verticle. ", ex);
+					});
+				}).onFailure(ex -> {
+					LOG.error("Failed to start main verticle. ", ex);
+				});
+			} catch (Throwable ex) {
+				LOG.error("Creating clustered Vertx failed. ", ex);
+				ExceptionUtils.rethrow(ex);
 			}
-		});
+		};
+
+		if(enableZookeeperCluster) {
+			Vertx.clusteredVertx(vertxOptions).onSuccess(vertx -> {
+				runner.accept(vertx);
+			}).onFailure(ex -> {
+				LOG.error("Creating clustered Vertx failed. ", ex);
+				ExceptionUtils.rethrow(ex);
+			});
+		} else {
+			Vertx vertx = Vertx.vertx(vertxOptions);
+			runner.accept(vertx);
+		}
 	}
 
-	/**	
-	 *	This is called by Vert.x when the verticle instance is deployed. 
-	 *	Initialize a new site context object for storing information about the entire site in English. 
-	 *	Setup the startPromise to handle the configuration steps and starting the server. 
-	 **/
-	@Override()
-	public void  start(Promise<Void> startPromise) throws Exception, Exception {
-
-		siteContextEnUS = new SiteContextEnUS();
-		siteContextEnUS.setVertx(vertx);
-		siteContextEnUS.initDeepSiteContextEnUS();
-
-		Future<Void> promiseSteps = configureData().future().compose(a -> 
-			configureCluster().future().compose(b -> 
-				configureOpenApi().future().compose(c -> 
-					configureHealthChecks().future().compose(d -> 
-						configureSharedWorkerExecutor().future().compose(e -> 
-							configureWebsockets().future().compose(f -> 
-								configureEmail().future().compose(g -> 
-									startServer().future()
-								)
-							)
-						)
-					)
-				)
-			)
-		);
-		promiseSteps.setHandler(startPromise);
+	/**
+	 * This is called by Vert.x when the verticle instance is deployed. 
+	 * Initialize a new site context object for storing information about the entire site in English. 
+	 * Setup the startPromise to handle the configuration steps and starting the server. 
+	 */
+	@Override
+	public void start(Promise<Void> startPromise) throws Exception {
+		try {
+			configureWebClient().onComplete(a ->
+				configureData().onComplete(b -> 
+					configureOpenApi().onComplete(d -> 
+						configureHealthChecks().onComplete(e -> 
+							configureSharedWorkerExecutor().onComplete(f -> 
+								configureWebsockets().onComplete(g -> 
+									configureEmail().onComplete(i -> 
+										configureApi().onComplete(j -> 
+											configureUi().onComplete(k -> 
+												configureCamel().onComplete(l -> 
+													startServer().onComplete(m -> startPromise.complete())
+												).onFailure(ex -> startPromise.fail(ex))
+											).onFailure(ex -> startPromise.fail(ex))
+										).onFailure(ex -> startPromise.fail(ex))
+									).onFailure(ex -> startPromise.fail(ex))
+								).onFailure(ex -> startPromise.fail(ex))
+							).onFailure(ex -> startPromise.fail(ex))
+						).onFailure(ex -> startPromise.fail(ex))
+					).onFailure(ex -> startPromise.fail(ex))
+				).onFailure(ex -> startPromise.fail(ex))
+			).onFailure(ex -> startPromise.fail(ex));
+		} catch (Exception ex) {
+			LOG.error("Couldn't start verticle. ", ex);
+		}
 	}
 
-	/**	
+	/**
+	 */
+	private Future<Void> configureWebClient() {
+		Promise<Void> promise = Promise.promise();
+
+		try {
+			webClient = WebClient.create(vertx);
+			promise.complete();
+		} catch(Exception ex) {
+			LOG.error("Unable to configure site context. ", ex);
+			promise.fail(ex);
+		}
+
+		return promise.future();
+	}
+
+	/**
 	 * 
 	 * Val.ConnectionError.enUS:Could not open the database client connection. 
 	 * Val.ConnectionSuccess.enUS:The database client connection was successful. 
 	 * 
-	 * Val.InitError.enUS:Could not initialize the database tables. 
-	 * Val.InitSuccess.enUS:The database tables were created successfully. 
+	 * Val.InitError.enUS:Could not initialize the database. 
+	 * Val.InitSuccess.enUS:The database was initialized successfully. 
 	 * 
-	 *	Configure shared database connections across the cluster for massive scaling of the application. 
-	 *	Return a promise that configures a shared database client connection. 
-	 *	Load the database configuration into a shared io.vertx.ext.jdbc.JDBCClient for a scalable, clustered datasource connection pool. 
-	 *	Initialize the database tables if not already created for the first time. 
-	 **/
-	private Promise<Void> configureData() {
-		SiteConfig siteConfig = siteContextEnUS.getSiteConfig();
+	 * Configure shared database connections across the cluster for massive scaling of the application. 
+	 * Return a promise that configures a shared database client connection. 
+	 * Load the database configuration into a shared io.vertx.ext.jdbc.JDBCClient for a scalable, clustered datasource connection pool. 
+	 */
+	private Future<Void> configureData() {
 		Promise<Void> promise = Promise.promise();
+		try {
+			PgConnectOptions pgOptions = new PgConnectOptions();
+			pgOptions.setPort(config().getInteger(ConfigKeys.JDBC_PORT));
+			pgOptions.setHost(config().getString(ConfigKeys.JDBC_HOST));
+			pgOptions.setDatabase(config().getString(ConfigKeys.JDBC_DATABASE));
+			pgOptions.setUser(config().getString(ConfigKeys.JDBC_USERNAME));
+			pgOptions.setPassword(config().getString(ConfigKeys.JDBC_PASSWORD));
+			pgOptions.setIdleTimeout(config().getInteger(ConfigKeys.JDBC_MAX_IDLE_TIME, 10));
+			pgOptions.setIdleTimeoutUnit(TimeUnit.SECONDS);
+			pgOptions.setConnectTimeout(config().getInteger(ConfigKeys.JDBC_CONNECT_TIMEOUT, 5));
 
-		PgConnectOptions pgOptions = new PgConnectOptions();
-		pgOptions.setPort(siteConfig.getJdbcPort());
-		pgOptions.setHost(siteConfig.getJdbcHost());
-		pgOptions.setDatabase(siteConfig.getJdbcDatabase());
-		pgOptions.setUser(siteConfig.getJdbcUsername());
-		pgOptions.setPassword(siteConfig.getJdbcPassword());
-		pgOptions.setIdleTimeout(siteConfig.getJdbcMaxIdleTime());
-		pgOptions.setIdleTimeoutUnit(TimeUnit.SECONDS);
-		pgOptions.setConnectTimeout(siteConfig.getJdbcConnectTimeout());
+			PoolOptions poolOptions = new PoolOptions();
+			jdbcMaxPoolSize = config().getInteger(ConfigKeys.JDBC_MAX_POOL_SIZE, 1);
+			jdbcMaxWaitQueueSize = config().getInteger(ConfigKeys.JDBC_MAX_WAIT_QUEUE_SIZE, 10);
+			poolOptions.setMaxSize(jdbcMaxPoolSize);
+			poolOptions.setMaxWaitQueueSize(jdbcMaxWaitQueueSize);
 
-		PoolOptions poolOptions = new PoolOptions();
-		poolOptions.setMaxSize(siteConfig.getJdbcMaxPoolSize());
-		poolOptions.setMaxWaitQueueSize(siteConfig.getJdbcMaxWaitQueueSize());
+			pgPool = PgPool.pool(vertx, pgOptions, poolOptions);
 
-		pgPool = PgPool.pool(vertx, pgOptions, poolOptions);
+			LOG.info(configureDataInitSuccess);
+			promise.complete();
+		} catch (Exception ex) {
+			LOG.error(configureDataInitError, ex);
+			promise.fail(ex);
+		}
 
-		siteContextEnUS.setPgPool(pgPool);
-
-
-		pgPool.preparedQuery(SQL_createTableC, a -> {
-			if (a.succeeded()) {
-				pgPool.preparedQuery(SQL_uniqueIndexC, b -> {
-					if (b.succeeded()) {
-						pgPool.preparedQuery(SQL_createTableA, c -> {
-							if (c.succeeded()) {
-								pgPool.preparedQuery(SQL_uniqueIndexA, d -> {
-									if (d.succeeded()) {
-										pgPool.preparedQuery(SQL_createTableD, e -> {
-											if (e.succeeded()) {
-												pgPool.preparedQuery(SQL_uniqueIndexD, f -> {
-													if (f.succeeded()) {
-														LOGGER.info(configureDataInitSuccess);
-														promise.complete();
-													} else {
-														LOGGER.error(configureDataInitError, f.cause());
-														promise.fail(f.cause());
-													}
-												});
-											} else {
-												LOGGER.error(configureDataInitError, e.cause());
-												promise.fail(e.cause());
-											}
-										});
-									} else {
-										LOGGER.error(configureDataInitError, d.cause());
-										promise.fail(d.cause());
-									}
-								});
-							} else {
-								LOGGER.error(configureDataInitError, c.cause());
-								promise.fail(c.cause());
-							}
-						});
-					} else {
-						LOGGER.error(configureDataInitError, b.cause());
-						promise.fail(b.cause());
-					}
-				});
-			} else {
-				LOGGER.error(configureDataInitError, a.cause());
-				promise.fail(a.cause());
-			}
-		});
-
-		return promise;
+		return promise.future();
 	}
 
-	/**	
-	 * 
-	 * Val.DataError.enUS:Could not configure the shared cluster data. 
-	 * Val.DataSuccess.enUS:The shared cluster data was configured successfully. 
-	 * 
-	 *	Configure shared data across the cluster for massive scaling of the application. 
-	 *	Return a promise that configures a shared cluster data. 
-	 **/ 
-	private Promise<Void> configureCluster() {
-		SiteConfig siteConfig = siteContextEnUS.getSiteConfig();
-		Promise<Void> promise = Promise.promise();
-		SharedData sharedData = vertx.sharedData();
-		sharedData.getClusterWideMap("clusterData", res -> {
-			if (res.succeeded()) {
-				AsyncMap<Object, Object> clusterData = res.result();
-				clusterData.put("siteConfig", siteConfig, resPut -> {
-					if (resPut.succeeded()) {
-						LOGGER.info(configureClusterDataSuccess);
-						promise.complete();
-					} else {
-						LOGGER.error(configureClusterDataError, res.cause());
-						promise.fail(res.cause());
-					}
-				});
-			} else {
-				LOGGER.error(configureClusterDataError, res.cause());
-				promise.fail(res.cause());
-			}
-		});
-		return promise;
-	}
-
-	/**	
+	/**
 	 * 
 	 * Val.Error.enUS:Could not configure the auth server and API. 
 	 * Val.Success.enUS:The auth server and API was configured successfully. 
 	 * 
-	 *	Configure the connection to the auth server and setup the routes based on the OpenAPI definition. 
-	 *	Setup a callback route when returning from the auth server after successful authentication. 
-	 *	Setup a logout route for logging out completely of the application. 
-	 *	Return a promise that configures the authentication server and OpenAPI. 
-	 **/
-	private Promise<Void> configureOpenApi() {
-		SiteConfig siteConfig = siteContextEnUS.getSiteConfig();
+	 * Configure the connection to the auth server and setup the routes based on the OpenAPI definition. 
+	 * Setup a callback route when returning from the auth server after successful authentication. 
+	 * Setup a logout route for logging out completely of the application. 
+	 * Return a promise that configures the authentication server and OpenAPI. 
+	 */
+	private Future<Void> configureOpenApi() {
 		Promise<Void> promise = Promise.promise();
-		String siteUrlBase = siteConfig.getSiteBaseUrl();
+		try {
+			String siteBaseUrl = config().getString(ConfigKeys.SITE_BASE_URL);
 
-		OAuth2ClientOptions oauth2ClientOptions = new OAuth2ClientOptions();
-		oauth2ClientOptions.setSite(siteConfig.getAuthUrl() + "/realms/" + siteConfig.getAuthRealm());
-		oauth2ClientOptions.setClientID(siteConfig.getAuthResource());
-		oauth2ClientOptions.setClientSecret(siteConfig.getAuthSecret());
-		oauth2ClientOptions.setFlow(OAuth2FlowType.AUTH_CODE);
-		JsonObject extraParams = new JsonObject();
-		extraParams.put("scope", "openid DefaultAuthScope SiteAdminScope");
-		oauth2ClientOptions.setExtraParameters(extraParams);
+			OAuth2Options oauth2ClientOptions = new OAuth2Options();
+			Boolean authSsl = config().getBoolean(ConfigKeys.AUTH_SSL);
+			String authHostName = config().getString(ConfigKeys.AUTH_HOST_NAME);
+			Integer authPort = config().getInteger(ConfigKeys.AUTH_PORT);
+			String authUrl = String.format("%s://%s%s/auth", (authSsl ? "https" : "http"), authHostName, (authPort == 443 || authPort == 80 ? "" : ":" + authPort));
+			oauth2ClientOptions.setSite(authUrl + "/realms/" + config().getString(ConfigKeys.AUTH_REALM));
+			oauth2ClientOptions.setTenant(config().getString(ConfigKeys.AUTH_REALM));
+			oauth2ClientOptions.setClientId(config().getString(ConfigKeys.AUTH_RESOURCE));
+			oauth2ClientOptions.setClientSecret(config().getString(ConfigKeys.AUTH_SECRET));
+			oauth2ClientOptions.setFlow(OAuth2FlowType.AUTH_CODE);
+			oauth2ClientOptions.setAuthorizationPath("/oauth/authorize");
+			JsonObject extraParams = new JsonObject();
+			extraParams.put("scope", "profile");
+			oauth2ClientOptions.setExtraParameters(extraParams);
 
-		OpenIDConnectAuth.discover(vertx, oauth2ClientOptions, a -> {
-			if(a.succeeded()) {
-				OAuth2Auth authProvider = a.result();
-	
-				OAuth2AuthHandler authHandler = OAuth2AuthHandler.create(authProvider, siteUrlBase + "/callback");
-				authHandler.addAuthority("DefaultAuthScope");
-				authHandler.addAuthority("SiteAdminScope");
-				authHandler.addAuthority("openid");
-				{
-					Router tempRouter = Router.router(vertx);
-					authHandler.setupCallback(tempRouter.get("/callback"));
-				}
-		
-		//		ClusteredSessionStore sessionStore = ClusteredSessionStore.create(vertx);
-				LocalSessionStore sessionStore = LocalSessionStore.create(vertx, "southerncoalition-sessions");
-				SessionHandler sessionHandler = SessionHandler.create(sessionStore);
-				sessionHandler.setAuthProvider(authProvider);
-		
-				OpenAPI3RouterFactory.create(vertx, "openapi3-enUS.yaml", b -> {
-					if (b.succeeded()) {
-						OpenAPI3RouterFactory routerFactory = b.result();
-						routerFactory.mountServicesFromExtensions();
-						siteContextEnUS.setRouterFactory(routerFactory);
-		
-						routerFactory.addGlobalHandler(sessionHandler);
-						routerFactory.addHandlerByOperationId("callback", ctx -> {
-		
-							// Handle the callback of the flow
-							final String code = ctx.request().getParam("code");
-		
-							// code is a require value
-							if (code == null) {
-								ctx.fail(400);
-								return;
-							}
-		
-							final String state = ctx.request().getParam("state");
-		
-							final JsonObject config = new JsonObject().put("code", code);
-		
-							config.put("redirect_uri", siteUrlBase + "/callback");
-		
-							authProvider.authenticate(config, res -> {
-								if (res.failed()) {
-									ctx.fail(res.cause());
-								} else {
-									AccessToken token = (AccessToken) res.result();
-//									token.isAuthorized("SiteAdminScope", r -> {
-//										if(r.succeeded()) {
-											ctx.setUser(res.result());
-											Session session = ctx.session();
-											if (session != null) {
-												// the user has upgraded from unauthenticated to authenticated
-												// session should be upgraded as recommended by owasp
-												ctx.addCookie(Cookie.cookie("sessionIdBefore", session.id()));
-												session.regenerateId();
-												// we should redirect the UA so this link becomes invalid
-												ctx.response()
-														// disable all caching
-														.putHeader(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
-														.putHeader("Pragma", "no-cache").putHeader(HttpHeaders.EXPIRES, "0")
-														// redirect (when there is no state, redirect to home
-														.putHeader(HttpHeaders.LOCATION, state != null ? state : "/").setStatusCode(302)
-														.end("Redirecting to " + (state != null ? state : "/") + ".");
-											} else {
-												// there is no session object so we cannot keep state
-												ctx.reroute(state != null ? state : "/");
-											}
-//										} else {
-//											String str = new JsonObject()
-//													.put("error", new JsonObject())
-//													.put("message", "Unauthorized").encodePrettily();
-//											Buffer buffer = Buffer.buffer().appendString(str);
-//											ctx.response().putHeader("Content-Length", Integer.toString(buffer.length()));
-//											ctx.response().write(buffer);
-//											ctx.response().setStatusCode(403);
-//											ctx.response().end();
-//										}
-//									});
-								}
-							});
-						});
-						routerFactory.addFailureHandlerByOperationId("callback", c -> {});
-		
-						routerFactory.addHandlerByOperationId("logout", rc -> {
-							Session session = rc.session();
-//							if (session != null) {
-//								session.destroy();
-//							}
-							rc.clearUser();
-							rc.reroute("/");
-						});
-						routerFactory.addFailureHandlerByOperationId("logout", c -> {});
-		
-//						routerFactory.addSecurityHandler("openIdConnect", authHandler);
-						routerFactory.addSecuritySchemaScopeValidator("openIdConnect", "DefaultAuthScope", authHandler);
-						routerFactory.addSecuritySchemaScopeValidator("openIdConnect", "SiteAdminScope", authHandler);
-						routerFactory.addSecuritySchemaScopeValidator("openIdConnect", "openid", authHandler);
-						Router router = routerFactory.getRouter();
-						siteContextEnUS.setRouter(router);
-		
-						LOGGER.info(configureOpenApiSuccess);
-						promise.complete();
-					} else {
-						LOGGER.error(configureOpenApiError, b.cause());
-						promise.fail(b.cause());
+			OpenIDConnectAuth.discover(vertx, oauth2ClientOptions, a -> {
+				if(a.succeeded()) {
+					oauth2AuthenticationProvider = a.result();
+
+					authorizationProvider = KeycloakAuthorization.create();
+
+					OAuth2AuthHandler oauth2AuthHandler = OAuth2AuthHandler.create(vertx, oauth2AuthenticationProvider, siteBaseUrl + "/callback");
+					{
+						Router tempRouter = Router.router(vertx);
+						oauth2AuthHandler.setupCallback(tempRouter.get("/callback"));
 					}
-				});
-			} else {
-				LOGGER.error(configureOpenApiError, a.cause());
-				promise.fail(a.cause());
-			}
-		});
-		return promise;
-	}
-
-	/**	
-	 *	Configure a shared worker executor for running blocking tasks in the background. 
-	 *	Return a promise that configures the shared worker executor. 
-	 **/
-	private Promise<Void> configureSharedWorkerExecutor() {
-		Promise<Void> promise = Promise.promise();
-
-		WorkerExecutor workerExecutor = vertx.createSharedWorkerExecutor("WorkerExecutor");
-		siteContextEnUS.setWorkerExecutor(workerExecutor);
-		promise.complete();
-		return promise;
-	}
-
-	/**	
-	 * 
-	 * Val.ErrorDatabase.enUS:The database is not configured properly. 
-	 * 
-	 * Val.EmptySolr.enUS:The Solr search engine is empty. 
-	 * 
-	 * Val.ErrorSolr.enUS:The Solr search engine is not configured properly. 
-	 * 
-	 * Val.ErrorVertx.enUS:The Vert.x application is not configured properly. 
-	 * 
-	 *	Configure health checks for the status of the website and it's dependent services. 
-	 *	Return a promise that configures the health checks. 
-	 **/
-	private Promise<Void> configureHealthChecks() {
-		Promise<Void> promise = Promise.promise();
-		Router siteRouteur = siteContextEnUS.getRouter();
-		HealthCheckHandler healthCheckHandler = HealthCheckHandler.create(vertx);
-
-		healthCheckHandler.register("database", 2000, a -> {
-			siteContextEnUS.getPgPool().preparedQuery("select current_timestamp" , selectCAsync -> {
-				if(selectCAsync.succeeded()) {
-					a.complete(Status.OK());
+			
+					//ClusteredSessionStore sessionStore = ClusteredSessionStore.create(vertx);
+					LocalSessionStore sessionStore = LocalSessionStore.create(vertx, "ActiveLearningStudio-API-sessions");
+					SessionHandler sessionHandler = SessionHandler.create(sessionStore);
+					if(StringUtils.startsWith(siteBaseUrl, "https://"))
+						sessionHandler.setCookieSecureFlag(true);
+			
+					RouterBuilder.create(vertx, "webroot/openapi3-enUS.yml", b -> {
+						if (b.succeeded()) {
+							RouterBuilder routerBuilder = b.result();
+							routerBuilder.mountServicesFromExtensions();
+			
+							routerBuilder.serviceExtraPayloadMapper(routingContext -> new JsonObject()
+									.put("uri", routingContext.request().uri())
+									.put("method", routingContext.request().method().name())
+									);
+							routerBuilder.rootHandler(sessionHandler);
+							routerBuilder.securityHandler("openIdConnect", oauth2AuthHandler);
+							routerBuilder.operation("callback").handler(ctx -> {
+			
+								// Handle the callback of the flow
+								final String code = ctx.request().getParam("code");
+			
+								// code is a require value
+								if (code == null) {
+									ctx.fail(400);
+									return;
+								}
+			
+								final String state = ctx.request().getParam("state");
+			
+								final JsonObject config = new JsonObject().put("code", code);
+			
+								config.put("redirectUri", siteBaseUrl + "/callback");
+			
+								oauth2AuthenticationProvider.authenticate(config, res -> {
+									if (res.failed()) {
+										LOG.error("Failed to authenticate user. ", res.cause());
+										ctx.fail(res.cause());
+									} else {
+										ctx.setUser(res.result());
+										Session session = ctx.session();
+										if (session != null) {
+											// the user has upgraded from unauthenticated to authenticated
+											// session should be upgraded as recommended by owasp
+											Cookie cookie = Cookie.cookie("sessionIdBefore", session.id());
+											if(StringUtils.startsWith(siteBaseUrl, "https://"))
+												cookie.setSecure(true);
+											ctx.addCookie(cookie);
+											session.regenerateId();
+											String redirectUri = session.get("redirect_uri");
+											// we should redirect the UA so this link becomes invalid
+											ctx.response()
+													// disable all caching
+													.putHeader(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+													.putHeader("Pragma", "no-cache")
+													.putHeader(HttpHeaders.EXPIRES, "0")
+													// redirect (when there is no state, redirect to home
+													.putHeader(HttpHeaders.LOCATION, redirectUri != null ? redirectUri : "/")
+													.setStatusCode(302)
+													.end("Redirecting to " + (redirectUri != null ? redirectUri : "/") + ".");
+										} else {
+											// there is no session object so we cannot keep state
+											ctx.reroute(state != null ? state : "/");
+										}
+									}
+								});
+							});
+							routerBuilder.operation("callback").failureHandler(c -> {});
+			
+							routerBuilder.operation("logout").handler(rc -> {
+								String redirectUri = rc.request().params().get("redirect_uri");
+								if(redirectUri == null)
+									redirectUri = "/";
+								rc.clearUser();
+								rc.response()
+										.putHeader(HttpHeaders.LOCATION, redirectUri)
+										.setStatusCode(302)
+										.end("Redirecting to " + redirectUri + ".");
+							});
+							routerBuilder.operation("logout").handler(c -> {});
+			
+							router = routerBuilder.createRouter();
+			
+							LOG.info(configureOpenApiSuccess);
+							promise.complete();
+						} else {
+							Exception ex = new RuntimeException("OpenID Connect Discovery failed", b.cause());
+							LOG.error(configureOpenApiError, ex);
+							promise.fail(ex);
+						}
+					});
 				} else {
-					LOGGER.error(configureHealthChecksErrorDatabase, a.future().cause());
-					promise.fail(a.future().cause());
+					Exception ex = new RuntimeException("OpenID Connect Discovery failed");
+					LOG.error(configureOpenApiError, ex);
+					promise.fail(ex);
 				}
 			});
-		});
-		healthCheckHandler.register("solr", 2000, a -> {
-			SolrQuery query = new SolrQuery();
-			query.setQuery("*:*");
-			try {
-				QueryResponse r = siteContextEnUS.getSolrClient().query(query);
-				if(r.getResults().size() > 0)
-					a.complete(Status.OK());
-				else {
-					LOGGER.error(configureHealthChecksEmptySolr, a.future().cause());
-					promise.fail(a.future().cause());
-				}
-			} catch (SolrServerException | IOException e) {
-				LOGGER.error(configureHealthChecksErrorSolr, a.future().cause());
-				promise.fail(a.future().cause());
+		} catch (Exception ex) {
+			LOG.error(configureOpenApiError, ex);
+			promise.fail(ex);
+		}
+		return promise.future();
+	}
+
+	/**
+	 * Val.Complete.enUS:The config was configured successfully. 
+	 * Val.Fail.enUS:Could not configure the config(). 
+	 */
+	public static Future<JsonObject> configureConfig(Vertx vertx) {
+		Promise<JsonObject> promise = Promise.promise();
+
+		try {
+			ConfigRetrieverOptions retrieverOptions = new ConfigRetrieverOptions();
+
+			retrieverOptions.addStore(new ConfigStoreOptions().setType("file").setFormat("yaml").setConfig(new JsonObject().put("path", "application.yml")));
+
+			String configPath = System.getenv(ConfigKeys.CONFIG_PATH);
+			if(StringUtils.isNotBlank(configPath)) {
+				ConfigStoreOptions configIni = new ConfigStoreOptions().setType("file").setFormat("yaml").setConfig(new JsonObject().put("path", configPath));
+				retrieverOptions.addStore(configIni);
 			}
-		});
-		siteRouteur.get("/health").handler(healthCheckHandler);
-		promise.complete();
-		return promise;
+
+			ConfigStoreOptions storeEnv = new ConfigStoreOptions().setType("env");
+			retrieverOptions.addStore(storeEnv);
+
+			ConfigRetriever configRetriever = ConfigRetriever.create(vertx, retrieverOptions);
+			configRetriever.getConfig().onSuccess(config -> {
+				LOG.info("The config was configured successfully. ");
+				promise.complete(config);
+			}).onFailure(ex -> {
+				LOG.error("Unable to configure site context. ", ex);
+				promise.fail(ex);
+			});
+		} catch(Exception ex) {
+			LOG.error("Unable to configure site context. ", ex);
+			promise.fail(ex);
+		}
+
+		return promise.future();
 	}
 
-	/**	
-	 *	Configure websockets for realtime messages. 
-	 **/
-	private Promise<Void> configureWebsockets() {
+	/**
+	 * 
+	 * Val.Fail.enUS:Could not configure the shared worker executor. 
+	 * Val.Complete.enUS:The shared worker executor "{}" was configured successfully. 
+	 * 
+	 * Configure a shared worker executor for running blocking tasks in the background. 
+	 * Return a promise that configures the shared worker executor. 
+	 */
+	private Future<Void> configureSharedWorkerExecutor() {
 		Promise<Void> promise = Promise.promise();
-		Router siteRouter = siteContextEnUS.getRouter();
-		BridgeOptions options = new BridgeOptions()
-				.addOutboundPermitted(new PermittedOptions().setAddressRegex("websocket.*"));
-		SockJSHandler sockJsHandler = SockJSHandler.create(vertx);
-		sockJsHandler.bridge(options);
-		siteRouter.route("/eventbus/*").handler(sockJsHandler);
-		promise.complete();
-		return promise;
+		try {
+			String name = "AppVertx-WorkerExecutor";
+			Integer workerPoolSize = System.getenv(ConfigKeys.WORKER_POOL_SIZE) == null ? 5 : Integer.parseInt(System.getenv(ConfigKeys.WORKER_POOL_SIZE));
+			workerExecutor = vertx.createSharedWorkerExecutor(name, workerPoolSize);
+			LOG.info(configureSharedWorkerExecutorComplete, name);
+			promise.complete();
+		} catch (Exception ex) {
+			LOG.error(configureSharedWorkerExecutorFail, ex);
+			promise.fail(ex);
+		}
+		return promise.future();
 	}
 
-	/**	
-	 *	Configure sending email. 
-	 **/
-	private Promise<Void> configureEmail() {
-		SiteConfig siteConfig = siteContextEnUS.getSiteConfig();
+	/**
+	 * Val.Complete.enUS:The health checks were configured successfully. 
+	 * Val.Fail.enUS:Could not configure the health checks. 
+	 * Val.ErrorDatabase.enUS:The database is not configured properly. 
+	 * Val.EmptySolr.enUS:The Solr search engine is empty. 
+	 * Val.ErrorSolr.enUS:The Solr search engine is not configured properly. 
+	 * Val.ErrorVertx.enUS:The Vert.x application is not configured properly. 
+	 * Configure health checks for the status of the website and it's dependent services. 
+	 * Return a promise that configures the health checks. 
+	 */
+	private Future<Void> configureHealthChecks() {
 		Promise<Void> promise = Promise.promise();
-		MailConfig config = new MailConfig();
-		config.setHostname(siteConfig.getEmailHost());
-		config.setPort(siteConfig.getEmailPort());
-		config.setSsl(siteConfig.getEmailSsl());
-		config.setUsername(siteConfig.getEmailUsername());
-		config.setPassword(siteConfig.getEmailPassword());
-		MailClient mailClient = MailClient.createShared(vertx, config);
-		siteContextEnUS.setMailClient(mailClient);
-		promise.complete();
-		return promise;
-	}
+		try {
+			HealthCheckHandler healthCheckHandler = HealthCheckHandler.create(vertx);
+			siteInstances = Optional.ofNullable(System.getenv(ConfigKeys.SITE_INSTANCES)).map(s -> Integer.parseInt(s)).orElse(1);
+			workerPoolSize = System.getenv(ConfigKeys.WORKER_POOL_SIZE) == null ? null : Integer.parseInt(System.getenv(ConfigKeys.WORKER_POOL_SIZE));
 
-	public void  errorAppVertx(SiteRequestEnUS siteRequest, AsyncResult<?> a) {
-		Throwable e = Optional.ofNullable(a).map(b -> b.cause()).orElse(null);
-		if(e != null)
-			LOGGER.error(ExceptionUtils.getStackTrace(e));
-		if(siteRequest != null) {
-			Transaction tx = siteRequest.getTx();
-			if(tx != null) {
-				tx.rollback(b -> {
-					if(b.succeeded()) {
-						LOGGER.info("Rollback the SQL connection succeded. ");
-						try {
-							SqlConnection connexionSql = siteRequest.getSqlConnection();
-				
-							if(connexionSql == null) {
-								LOGGER.info("Close the SQL connection succeded. ");
-							} else {
-								connexionSql.close();
-								siteRequest.setSqlConnection(null);
-								LOGGER.info("Close the SQL connection succeded. ");
-							}
-						} catch(Exception ex) {
-							LOGGER.error(String.format("sqlFermerEcole a échoué. ", ex));
-						}
+			healthCheckHandler.register("database", 2000, a -> {
+				pgPool.preparedQuery("select current_timestamp").execute(selectCAsync -> {
+					if(selectCAsync.succeeded()) {
+						a.complete(Status.OK(new JsonObject().put("jdbcMaxPoolSize", jdbcMaxPoolSize).put("jdbcMaxWaitQueueSize", jdbcMaxWaitQueueSize)));
 					} else {
-						LOGGER.error("Rollback the SQL connection failed. ", b.cause());
+						LOG.error(configureHealthChecksErrorDatabase, a.future().cause());
+						promise.fail(a.future().cause());
 					}
 				});
-			}
+			});
+			healthCheckHandler.register("solr", 2000, a -> {
+				try {
+					String solrHostName = config().getString(ConfigKeys.SOLR_HOST_NAME);
+					Integer solrPort = config().getInteger(ConfigKeys.SOLR_PORT);
+					String solrCollection = config().getString(ConfigKeys.SOLR_COLLECTION);
+					String solrRequestUri = String.format("/solr/%s/select%s", solrCollection, "");
+					webClient.get(solrPort, solrHostName, solrRequestUri).send().onSuccess(b -> {
+						try {
+							a.complete(Status.OK());
+						} catch(Exception ex) {
+							LOG.error("Could not read response from Solr. ", ex);
+							a.fail(ex);
+						}
+					}).onFailure(ex -> {
+						LOG.error(String.format("Solr request failed. "), new RuntimeException(ex));
+						a.fail(ex);
+					});
+				} catch (Exception e) {
+					LOG.error(configureHealthChecksErrorSolr, a.future().cause());
+					a.fail(a.future().cause());
+				}
+			});
+			healthCheckHandler.register("vertx", 2000, a -> {
+				a.complete(Status.OK(new JsonObject().put(ConfigKeys.SITE_INSTANCES, siteInstances).put("workerPoolSize", workerPoolSize)));
+			});
+			router.get("/health").handler(healthCheckHandler);
+			LOG.info(configureHealthChecksComplete);
+			promise.complete();
+		} catch (Exception ex) {
+			LOG.error(configureHealthChecksFail, ex);
+			promise.fail(ex);
 		}
+		return promise.future();
 	}
 
-	/**	
-	 * 
-	 * Val.ErrorServer.enUS:The server is not configured properly. 
-	 * Val.SuccessServer.enUS:The HTTP server is running: %s:%s
-	 * Val.BeforeServer.enUS:HTTP server starting: %s://%s:%s
-	 * Val.Ssl.enUS:Configuring SSL: %s
-	 * 
-	 *	Start the Vert.x server. 
-	 *	Démarrer le serveur Vert.x. 
-	 **/
-	private Promise<Void> startServer() {
-		SiteConfig siteConfig = siteContextEnUS.getSiteConfig();
+	/**
+	 * Configure websockets for realtime messages. 
+	 * Val.Complete.enUS:Configure websockets succeeded. 
+	 * Val.Fail.enUS:Configure websockets failed. 
+	 */
+	private Future<Void> configureWebsockets() {
 		Promise<Void> promise = Promise.promise();
-
-		ClusterEnUSGenApiService.registerService(siteContextEnUS, vertx);
-		SiteUserEnUSGenApiService.registerService(siteContextEnUS, vertx);
-		PageDesignEnUSGenApiService.registerService(siteContextEnUS, vertx);
-		HtmlPartEnUSGenApiService.registerService(siteContextEnUS, vertx);
-		SiteStateEnUSGenApiService.registerService(siteContextEnUS, vertx);
-		SiteAgencyEnUSGenApiService.registerService(siteContextEnUS, vertx);
-		ReportCardEnUSGenApiService.registerService(siteContextEnUS, vertx);
-
-		Router siteRouter = siteContextEnUS.getRouter();
-
-		StaticHandler staticHandler = StaticHandler.create().setCachingEnabled(false).setFilesReadOnly(true);
-		if("southerncoalition-dev.heytate.com".equals(siteConfig.getSiteHostName())) {
-			staticHandler.setAllowRootFileSystemAccess(true);
-			staticHandler.setWebRoot("/usr/local/src/southerncoalition-static");
+		try {
+			SockJSBridgeOptions options = new SockJSBridgeOptions()
+					.addOutboundPermitted(new PermittedOptions().setAddressRegex("websocket.*"));
+			SockJSHandler sockJsHandler = SockJSHandler.create(vertx);
+			sockJsHandler.bridge(options);
+			router.route("/eventbus/*").handler(sockJsHandler);
+			LOG.info(configureWebsocketsComplete);
+			promise.complete();
+		} catch (Exception ex) {
+			LOG.error(configureWebsocketsFail, ex);
+			promise.fail(ex);
 		}
-		siteRouter.route("/static/*").handler(staticHandler);
+		return promise.future();
+	}
 
-		SimpleModule module = new SimpleModule();
-		module.addSerializer(ZonedDateTime.class, new ZonedDateTimeSerializer());
-		module.addSerializer(LocalDate.class, new LocalDateSerializer());
-		module.addSerializer(LocalTime.class, new LocalTimeSerializer());
-		Json.mapper.registerModule(module);
-
-		String siteHostName = siteConfig.getSiteHostName();
-		String siteBaseUrl = siteConfig.getSiteBaseUrl();
-		Integer sitePort = siteConfig.getSitePort();
-		HttpServerOptions options = new HttpServerOptions();
-		Boolean ssl = false;
-		if(StringUtils.isNotBlank(siteConfig.getSslJksPath()) && StringUtils.startsWith(siteBaseUrl, "https://") && new File(siteConfig.getSslJksPath()).exists()) {
-			options.setKeyStoreOptions(new JksOptions().setPath(siteConfig.getSslJksPath()).setPassword(siteConfig.getSslJksPassword()));
-			ssl = true;
-			options.setSsl(ssl);
-			LOGGER.info(String.format(startServerSsl, siteConfig.getSslJksPath()));
-		}
-		options.setPort(sitePort);
-
-		LOGGER.info(String.format(startServerBeforeServer, (ssl ? "https" : "http"), siteHostName, sitePort));
-		vertx.createHttpServer(options).requestHandler(siteRouter).listen(ar -> {
-			if (ar.succeeded()) {
-				LOGGER.info(String.format(startServerSuccessServer, "*", sitePort));
+	/**
+	 * Configure sending email. 
+	 * Val.Complete.enUS:Configure sending email succeeded. 
+	 * Val.Fail.enUS:Configure sending email failed. 
+	 */
+	private Future<Void> configureEmail() {
+		Promise<Void> promise = Promise.promise();
+		try {
+			String emailHost = config().getString(ConfigKeys.EMAIL_HOST);
+			if(StringUtils.isNotBlank(emailHost)) {
+				MailConfig mailConfig = new MailConfig();
+				mailConfig.setHostname(emailHost);
+				mailConfig.setPort(config().getInteger(ConfigKeys.EMAIL_PORT));
+				mailConfig.setSsl(config().getBoolean(ConfigKeys.EMAIL_SSL));
+				mailConfig.setUsername(config().getString(ConfigKeys.EMAIL_USERNAME));
+				mailConfig.setPassword(config().getString(ConfigKeys.EMAIL_PASSWORD));
+				MailClient.createShared(vertx, mailConfig);
+				LOG.info(configureEmailComplete);
 				promise.complete();
 			} else {
-				LOGGER.error(startServerErrorServer, ar.cause());
-				promise.fail(ar.cause());
+				LOG.info(configureEmailComplete);
+				promise.complete();
 			}
-		});
-
-		return promise;
-	}
-
-	/**	
-	 *	This is called by Vert.x when the verticle instance is undeployed. 
-	 *	Setup the stopPromise to handle tearing down the server. 
-	 **/
-	@Override()
-	public void  stop(Promise<Void> stopPromise) throws Exception, Exception {
-		Promise<Void> promiseSteps = closeData();
-		promiseSteps.future().setHandler(stopPromise);
-	}
-
-	/**	
-	 * Val.Error.enUS:Could not close the database client connection. 
-	 * Val.Success.enUS:The database client connextion was closed. 
-	 * 
-	 *	Return a promise to close the database client connection. 
-	 **/
-	private Promise<Void> closeData() {
-		Promise<Void> promise = Promise.promise();
-		PgPool pgPool = siteContextEnUS.getPgPool();
-
-		if(pgPool != null) {
-			pgPool.close();
-			LOGGER.info(closeDataSuccess);
-			promise.complete();
+		} catch (Exception ex) {
+			LOG.error(configureEmailFail, ex);
+			promise.fail(ex);
 		}
-		return promise;
+		return promise.future();
+	}
+
+	/**
+	 * Val.Fail.enUS:The API was not configured properly. 
+	 * Val.Complete.enUS:The API was configured properly. 
+	 */
+	private Future<Void> configureApi() {
+		Promise<Void> promise = Promise.promise();
+		try {
+			templateEngine = HandlebarsTemplateEngine.create(vertx);
+
+			SiteUserEnUSGenApiService.registerService(vertx.eventBus(), config(), workerExecutor, pgPool, webClient, oauth2AuthenticationProvider, authorizationProvider, templateEngine, vertx);
+			SiteStateEnUSGenApiService.registerService(vertx.eventBus(), config(), workerExecutor, pgPool, webClient, oauth2AuthenticationProvider, authorizationProvider, templateEngine, vertx);
+			SiteAgencyEnUSGenApiService.registerService(vertx.eventBus(), config(), workerExecutor, pgPool, webClient, oauth2AuthenticationProvider, authorizationProvider, templateEngine, vertx);
+			ReportCardEnUSGenApiService.registerService(vertx.eventBus(), config(), workerExecutor, pgPool, webClient, oauth2AuthenticationProvider, authorizationProvider, templateEngine, vertx);
+
+			LOG.info(configureApiComplete);
+			promise.complete();
+		} catch(Exception ex) {
+			LOG.error(configureApiFail, ex);
+			promise.fail(ex);
+		}
+		return promise.future();
+	}
+
+	/**
+	 * Val.Fail.enUS:The UI was not configured properly. 
+	 * Val.Complete.enUS:The UI was configured properly. 
+	 */
+	private Future<Void> configureUi() {
+		Promise<Void> promise = Promise.promise();
+		try {
+			String staticPath = config().getString(ConfigKeys.STATIC_PATH);
+			String staticBaseUrl = config().getString(ConfigKeys.STATIC_BASE_URL);
+			String siteBaseUrl = config().getString(ConfigKeys.SITE_BASE_URL);
+			String templatePath = config().getString(ConfigKeys.TEMPLATE_PATH);
+			Handlebars handlebars = (Handlebars)templateEngine.unwrap();
+			TemplateHandler templateHandler;
+			if(StringUtils.isBlank(templatePath))
+				templateHandler = TemplateHandler.create(templateEngine);
+			else
+				templateHandler = TemplateHandler.create(templateEngine, templatePath, "text/html");
+
+			handlebars.registerHelpers(ConditionalHelpers.class);
+			handlebars.registerHelpers(StringHelpers.class);
+			handlebars.registerHelpers(AuthHelpers.class);
+			handlebars.registerHelpers(SiteHelpers.class);
+			handlebars.registerHelpers(DateHelpers.class);
+
+			router.get("/").handler(a -> {
+				a.reroute("/template/enUS/HomePage");
+			});
+ 
+			router.get("/api").handler(ctx -> {
+				ctx.reroute("/template/enUS/openapi");
+			});
+
+			router.get("/template/enUS/HomePage").handler(ctx -> {
+				HomePage t = new HomePage();
+				SiteRequestEnUS siteRequest = new SiteRequestEnUS();
+				siteRequest.setConfig(config());
+				siteRequest.setRequestHeaders(ctx.response().headers());
+				siteRequest.initDeepSiteRequestEnUS();
+				t.promiseDeepForClass(siteRequest).onSuccess(a -> {
+					JsonObject json = JsonObject.mapFrom(t);
+					json.forEach(entry -> {
+						ctx.put(entry.getKey(), entry.getValue());
+					});
+					ctx.next();
+				}).onFailure(ex -> {
+					ctx.fail(ex);
+				});
+			});
+
+			router.get("/template/*").handler(templateHandler);
+			router.errorHandler(500, ctx -> {
+				Throwable ex = ctx.failure();
+				LOG.error("Error occured. ", ex);
+				ctx.json(new JsonObject().put("error", new JsonObject().put("message", ex.getMessage())));
+			});
+
+			StaticHandler staticHandler = StaticHandler.create().setCachingEnabled(false).setFilesReadOnly(false);
+			if(staticPath != null) {
+				staticHandler.setAllowRootFileSystemAccess(true);
+				staticHandler.setWebRoot(staticPath);
+			}
+			router.route("/static/*").handler(staticHandler);
+
+			LOG.info(configureUiComplete);
+			promise.complete();
+		} catch(Exception ex) {
+			LOG.error(configureUiFail);
+			promise.fail(ex);
+		}
+		return promise.future();
+	}
+
+	public Future<Void> putVarsInRoutingContext(RoutingContext ctx) {
+		Promise<Void> promise = Promise.promise();
+		try {
+			for(Entry<String, String> entry : ctx.queryParams()) {
+				String paramName = entry.getKey();
+				String paramObject = entry.getValue();
+				String entityVar = null;
+				String valueIndexed = null;
+
+				switch(paramName) {
+					case "var":
+						entityVar = StringUtils.trim(StringUtils.substringBefore((String)paramObject, ":"));
+						valueIndexed = URLDecoder.decode(StringUtils.trim(StringUtils.substringAfter((String)paramObject, ":")), "UTF-8");
+						ctx.put(entityVar, valueIndexed);
+						break;
+				}
+				promise.complete();
+			}
+		} catch(Exception ex) {
+			LOG.error(String.format("putVarsInRoutingContext failed. "), ex);
+			promise.fail(ex);
+		}
+		return promise.future();
+	}
+
+	/**
+	 * Val.Fail.enUS:The Camel Component was not configured properly. 
+	 * Val.Complete.enUS:The Camel Component was configured properly. 
+	 */
+	private Future<Void> configureCamel() {
+		Promise<Void> promise = Promise.promise();
+		try {
+			LOG.info(configureCamelComplete);
+			promise.complete();
+		} catch(Exception ex) {
+			LOG.error(configureCamelFail);
+			promise.fail(ex);
+		}
+		return promise.future();
+	}
+
+	/**
+	 * 
+	 * Val.ErrorServer.enUS:The server is not configured properly. 
+	 * Val.SuccessServer.enUS:The HTTP server is running: %s
+	 * Val.BeforeServer.enUS:HTTP server starting: %s
+	 * Val.Ssl.enUS:Configuring SSL: %s
+	 * 
+	 * Start the Vert.x server. 
+	 */
+	private Future<Void> startServer() {
+		Promise<Void> promise = Promise.promise();
+
+		try {
+			Boolean sslPassthrough = config().getBoolean(ConfigKeys.SSL_PASSTHROUGH, false);
+			String siteBaseUrl = config().getString(ConfigKeys.SITE_BASE_URL);
+			Integer sitePort = config().getInteger(ConfigKeys.SITE_PORT);
+			String sslJksPath = config().getString(ConfigKeys.SSL_JKS_PATH);
+			String sslPrivateKeyPath = config().getString(ConfigKeys.SSL_KEY_PATH);
+			String sslCertPath = config().getString(ConfigKeys.SSL_CERT_PATH);
+			HttpServerOptions options = new HttpServerOptions();
+			if(sslPassthrough) {
+				if(sslPrivateKeyPath != null && sslCertPath != null) {
+					options.setPemKeyCertOptions(new PemKeyCertOptions().setKeyPath(sslPrivateKeyPath).setCertPath(sslCertPath));
+					LOG.info(String.format(startServerSsl, sslPrivateKeyPath));
+					LOG.info(String.format(startServerSsl, sslCertPath));
+				} else if(sslJksPath != null) {
+					options.setKeyStoreOptions(new JksOptions().setPath(sslJksPath).setPassword(config().getString(ConfigKeys.SSL_JKS_PASSWORD)));
+					LOG.info(String.format(startServerSsl, sslJksPath));
+				}
+				options.setSsl(true);
+			}
+			options.setPort(sitePort);
+	
+			LOG.info(String.format(startServerBeforeServer, siteBaseUrl));
+			vertx.createHttpServer(options).requestHandler(router).listen(ar -> {
+				if (ar.succeeded()) {
+					LOG.info(String.format(startServerSuccessServer, siteBaseUrl));
+					promise.complete();
+				} else {
+					LOG.error(startServerErrorServer, ar.cause());
+					promise.fail(ar.cause());
+				}
+			});
+		} catch (Exception ex) {
+			LOG.error(startServerErrorServer, ex);
+			promise.fail(ex);
+		}
+
+		return promise.future();
+	}
+
+	/**
+	 * This is called by Vert.x when the verticle instance is undeployed. 
+	 * Setup the stopPromise to handle tearing down the server. 
+	 * Val.Fail.enUS:Could not close the database client connection. 
+	 * Val.Complete.enUS:The database client connection was closed. 
+	 */
+	@Override
+	public void stop(Promise<Void> promise) throws Exception {
+		if(pgPool != null) {
+			pgPool.close().onSuccess(a -> {
+				LOG.info(stopComplete);
+				promise.complete();
+			}).onFailure(ex -> {
+				LOG.error(stopFail, ex);
+				promise.fail(ex);
+			});
+		}
+	}
+
+	public String toId(String s) {
+		if(s != null) {
+			s = Normalizer.normalize(s, Normalizer.Form.NFD);
+			s = StringUtils.lowerCase(s);
+			s = StringUtils.trim(s);
+			s = StringUtils.replacePattern(s, "\\s{1,}", "-");
+			s = StringUtils.replacePattern(s, "[^\\w-]", "");
+			s = StringUtils.replacePattern(s, "-{2,}", "-");
+		}
+
+		return s;
 	}
 }

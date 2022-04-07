@@ -377,3 +377,16 @@ Run the playbook to install the southerncoalition project in your OpenShift envi
 ```bash
 ansible-playbook southerncoalition_openshift.yml -i /usr/local/src/southerncoalition-ansible/inventories/$USER-openshift/hosts --vault-id @prompt
 ```
+
+# How the base classes were generated
+
+```bash
+ansible-playbook -e @~/.local/src/southerncoalition/local/ansible_install_vars.yml ~/.local/src/computate-org/vertx_project.yml
+ansible-playbook ~/.ansible/roles/computate.computate_project/install.yml -e SITE_NAME=southerncoalition -e ENABLE_CODE_GENERATION_SERVICE=true
+```
+
+# How to watch the code generation logs
+
+```bash
+journalctl -f --user-unit watch-southerncoalition
+```
