@@ -140,6 +140,7 @@ public class AppVertx extends AppVertxGen<AbstractVerticle> {
 	 **/
 	public static void  main(String[] args) {
 		run();
+		WorkerVertx.run();
 	}
 
 	public static void  run() {
