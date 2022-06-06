@@ -368,11 +368,21 @@ public class WorkerVertx extends WorkerVertxGen<AbstractVerticle> {
 		Promise<Void> promise = Promise.promise();
 		try {
 			if("true".equals(System.getenv("ENABLE_DB_SOLR_SYNC"))) {
-				syncData("org.southerncoalition.enus.state.SiteState").onSuccess(q -> {
-					syncData("org.southerncoalition.enus.agency.SiteAgency").onSuccess(a -> {
-						syncData("org.southerncoalition.enus.reportcard.ReportCard").onSuccess(p -> {
-							LOG.info(syncDbToSolrComplete);
-							promise.complete();
+				syncData("org.southerncoalition.enus.state.SiteState").onSuccess(a -> {
+					syncData("org.southerncoalition.enus.agency.SiteAgency").onSuccess(b -> {
+						syncData("org.southerncoalition.enus.reportcard.ReportCard").onSuccess(c -> {
+							syncData("org.southerncoalition.enus.design.PageDesign").onSuccess(d -> {
+								syncData("org.southerncoalition.enus.html.part.HtmlPart").onSuccess(e -> {
+									LOG.info(syncDbToSolrComplete);
+									promise.complete();
+								}).onFailure(ex -> {
+									LOG.error(syncDbToSolrFail, ex);
+									promise.fail(ex);
+								});
+							}).onFailure(ex -> {
+								LOG.error(syncDbToSolrFail, ex);
+								promise.fail(ex);
+							});
 						}).onFailure(ex -> {
 							LOG.error(syncDbToSolrFail, ex);
 							promise.fail(ex);
