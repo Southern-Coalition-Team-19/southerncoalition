@@ -24,13 +24,13 @@ import org.southerncoalition.enus.wrap.Wrap;
  * ApiMethod.enUS: Search
  * 
  * ApiMethod.enUS: AdminSearch
- * ApiUriAdminSearch.enUS: /api/admin/state
+ * ApiUri.AdminSearch.enUS: /api/admin/state
  * RoleUtilisateurAdminSearch.enUS: true
  * 
  * ApiMethod.enUS: SearchPage
- * PageSearchPage.enUS: SiteStatePage
- * PageSuperSearchPage.enUS: ClusterPage
- * ApiUriSearchPage.enUS: /state
+ * Page.SearchPage.enUS: SiteStatePage
+ * PageSuper.SearchPage.enUS: ClusterPage
+ * ApiUri.SearchPage.enUS: /state
  * 
  * AName.enUS: a state
  * Color: pale-blue

@@ -10,30 +10,23 @@
 	<description></description>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
+		<maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
+		<vertx-maven-plugin.version>1.0.28</vertx-maven-plugin.version>
+		<build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
+		<exec-maven-plugin.version>3.1.0</exec-maven-plugin.version>
+		<nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
+		<maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
+		<flatten-maven-plugin.version>1.3.0</flatten-maven-plugin.version>
+		<maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+		<maven-javadoc-plugin.version>3.4.1</maven-javadoc-plugin.version>
+		<maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
 
-		<!-- configure the versions you want to use here -->
-		<fabric8.version>2.3.7</fabric8.version>
-
-		<!-- maven plugin versions -->
-		<fabric8-maven-plugin.version>3.5.42</fabric8-maven-plugin.version>
-		<maven-compiler-plugin.version>3.6.0</maven-compiler-plugin.version>
-		<maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
-		<vertx-maven-plugin.version>1.0.9</vertx-maven-plugin.version>
-		<build-helper-maven-plugin.version>3.0.0</build-helper-maven-plugin.version>
-		<exec-maven-plugin.version>1.5.0</exec-maven-plugin.version>
 		<vertx.verticle>org.southerncoalition.enUS.vertx.AppVertx</vertx.verticle>
 		<vertx.version>3.8.5</vertx.version>
-		<fabric8.generator.from>registry.access.redhat.com/redhat-openjdk-18/openjdk18-openshift:latest</fabric8.generator.from>
 	</properties>
 
 	<dependencies>
-
-		<dependency>
-			<groupId>io.fabric8</groupId>
-			<artifactId>fabric8-project-bom-with-platform-deps</artifactId>
-			<version>${fabric8.version}</version>
-			<type>pom</type>
-		</dependency>
 
 		<dependency>
 			<groupId>commons-beanutils</groupId>
@@ -63,7 +56,7 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<version>42.2.2.jre7</version>
+			<version>42.5.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.solr</groupId>
@@ -249,8 +242,75 @@
 		</dependency>
 	</dependencies>
 
+	<profiles>
+		<!-- Deployment profile (required so these plugins are only used when deploying) -->
+		<profile>
+			<id>deploy</id>
+			<build>
+				<plugins>
+					<!-- Source plugin -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-source-plugin</artifactId>
+						<version>${maven-source-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>attach-sources</id>
+								<goals>
+									<goal>jar-no-fork</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+
+					<!-- Javadoc plugin -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<version>${maven-javadoc-plugin.version}</version>
+						<configuration>
+							<additionalJOption>-Xdoclint:none</additionalJOption>
+						</configuration>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+
+					<!-- GPG plugin -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>${maven-gpg-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+								<configuration>
+									<!-- Prevent `gpg` from using pinentry programs -->
+									<gpgArguments>
+										<arg>--pinentry-mode</arg>
+										<arg>loopback</arg>
+									</gpgArguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
 	<build>
 
+		<!-- Source Directory Configuration -->
 		<resources>
 			<resource>
 				<directory>src/main/resources</directory>
@@ -261,33 +321,75 @@
 
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>properties-maven-plugin</artifactId>
-				<version>1.0.0</version>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>${exec-maven-plugin.version}</version>
+				<configuration>
+					<executable>maven</executable>
+					<includePluginDependencies>false</includePluginDependencies>
+					<includeProjectDependencies>true</includeProjectDependencies>
+					<mainClass>org.southerncoalition.enus.vertx.AppVertx</mainClass>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+				<version>${flatten-maven-plugin.version}</version>
+				<configuration>
+					<updatePomFile>true</updatePomFile>
+					<pomElements>
+						<name />
+						<description />
+						<url />
+						<inceptionYear />
+						<organization />
+						<scm />
+						<developers />
+						<contributors />
+						<mailingLists />
+					</pomElements>
+				</configuration>
 				<executions>
 					<execution>
-						<phase>initialize</phase>
+						<id>flatten</id>
+						<phase>process-resources</phase>
 						<goals>
-							<goal>read-project-properties</goal>
+							<goal>flatten</goal>
 						</goals>
-						<configuration>
-							<files>
-								<file>/opt/keystore/southerncoalition-keystore.properties</file>
-							</files>
-						</configuration>
+					</execution>
+					<execution>
+						<id>flatten.clean</id>
+						<phase>clean</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>
 
+			<!-- Vert.X Code Generation -->
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>${maven-compiler-plugin.version}</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>11</source>
+					<target>11</target>
+					<encoding>UTF-8</encoding>
 					<annotationProcessors>
 						<annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
 					</annotationProcessors>
 				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>${maven-jar-plugin.version}</version>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${maven-surefire-plugin.version}</version>
 			</plugin>
 
 			<plugin>
@@ -310,83 +412,67 @@
 					</execution>
 				</executions>
 			</plugin>
+
+			<plugin>
+				<groupId>io.reactiverse</groupId>
+				<artifactId>vertx-maven-plugin</artifactId>
+				<version>${vertx-maven-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>vmp</id>
+						<goals>
+							<goal>initialize</goal>
+							<goal>package</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<redeploy>true</redeploy>
+				</configuration>
+			</plugin>
+
+			<!-- JaCoCo Code Coverage Plugin -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.6</version>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Nexus Staging Plugin -->
+			<plugin>
+				<groupId>org.sonatype.plugins</groupId>
+				<artifactId>nexus-staging-maven-plugin</artifactId>
+				<version>${nexus-staging-maven-plugin.version}</version>
+				<extensions>true</extensions>
+				<configuration>
+					<serverId>ossrh</serverId>
+					<nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+					<autoReleaseAfterClose>false</autoReleaseAfterClose>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
-	<profiles>
-		<profile>
-			<id>openshift</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>io.fabric8</groupId>
-						<artifactId>fabric8-maven-plugin</artifactId>
-						<version>3.5.40</version>
-						<executions>
-							<execution>
-								<goals>
-									<goal>resource</goal>
-									<goal>build</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-shade-plugin</artifactId>
-						<version>2.3</version>
-						<executions>
-							<execution>
-								<phase>package</phase>
-								<goals>
-									<goal>shade</goal>
-								</goals>
-								<configuration>
-									<filters>
-										<filter>
-											<artifact>*:*</artifact>
-											<excludes>
-												<exclude>META-INF/*.SF</exclude>
-												<exclude>META-INF/*.DSA</exclude>
-												<exclude>META-INF/*.RSA</exclude>
-											</excludes>
-										</filter>
-									</filters>
-									<transformers>
-										<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-										</transformer>
-									</transformers>
-									<shadedArtifactAttached>true</shadedArtifactAttached>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-jarsigner-plugin</artifactId>
-						<version>1.4</version>
-						<executions>
-							<execution>
-								<id>sign</id>
-								<goals>
-									<goal>sign</goal>
-								</goals>
-							</execution>
-							<execution>
-								<id>verify</id>
-								<goals>
-									<goal>verify</goal>
-								</goals>
-							</execution>
-						</executions>
-						<configuration>
-							<keystore>${keystore-path}</keystore>
-							<alias>${keystore-alias}</alias>
-							<storepass>${keystore-storepass}</storepass>
-							<keypass>${keystore-keypass}</keypass>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
+
+	<distributionManagement>
+		<!-- Central Repository -->
+		<snapshotRepository>
+			<id>ossrh</id>
+			<url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
 </project>

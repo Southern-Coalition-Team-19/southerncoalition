@@ -25,9 +25,9 @@ import org.southerncoalition.enus.wrap.Wrap;
  * ApiMethod.enUS: Search
  * 
  * ApiMethod.enUS: SearchPage
- * PageSearchPage.enUS: HtmlPartPage
- * PageSuperSearchPage.enUS: ClusterPage
- * ApiUriSearchPage.enUS: /html-part
+ * Page.SearchPage.enUS: HtmlPartPage
+ * PageSuper.SearchPage.enUS: ClusterPage
+ * ApiUri.SearchPage.enUS: /html-part
  * 
  * AName.enUS:an HTML part
  * Color: khaki

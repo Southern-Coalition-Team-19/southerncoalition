@@ -1,16 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rerc
-  namespace: rerc
+  name: opendatapolicing
+  namespace: scsj-86c3ca
 spec:
   replicas: 1
   revisionHistoryLimit: 10
   selector:
-  selector:
     matchLabels:
-      app: rerc
-      deployment: rerc
+      app: opendatapolicing
+      deployment: opendatapolicing
   strategy:
     rollingUpdate:
       maxSurge: 25%
@@ -19,122 +18,222 @@ spec:
   template:
     metadata:
       labels:
-        app: rerc
-        deploymentconfig: rerc
+        app: opendatapolicing
+        deployment: opendatapolicing
     spec:
       containers:
       - env:
-        - name: authRealm
+        - name: AUTH_REALM
+          value: SOUTHERNCOALITION
+        - name: AUTH_RESOURCE
+          value: southerncoalition
+        - name: AUTH_SECRET
           valueFrom:
             secretKeyRef:
-              key: authRealm
-              name: rerc-secret
-        - name: authResource
+              key: AUTH_SECRET
+              name: opendatapolicing-secret
+        - name: AUTH_HOST_NAME
+          value: sso.opendatapolicingnc.com
+        - name: AUTH_PORT
+          value: '443'
+        - name: AUTH_SSL
+          value: 'true'
+        - name: AUTH_TOKEN_URI
+          value: /auth/realms/SOUTHERNCOALITION/protocol/openid-connect/token
+        - name: EMAIL_AUTH
           valueFrom:
             secretKeyRef:
-              key: authResource
-              name: rerc-secret
-        - name: authSecret
+              key: EMAIL_AUTH
+              name: opendatapolicing-secret
+        - name: EMAIL_FROM
           valueFrom:
             secretKeyRef:
-              key: authSecret
-              name: rerc-secret
-        - name: authUrl
+              key: EMAIL_FROM
+              name: opendatapolicing-secret
+        - name: EMAIL_HOST
           valueFrom:
             secretKeyRef:
-              key: authUrl
-              name: rerc-secret
-        - name: emailAuth
+              key: EMAIL_HOST
+              name: opendatapolicing-secret
+        - name: EMAIL_PASSWORD
           valueFrom:
             secretKeyRef:
-              key: emailAuth
-              name: rerc-secret
-        - name: emailFrom
+              key: EMAIL_PASSWORD
+              name: opendatapolicing-secret
+        - name: EMAIL_PORT
           valueFrom:
             secretKeyRef:
-              key: emailFrom
-              name: rerc-secret
-        - name: emailHost
+              key: EMAIL_PORT
+              name: opendatapolicing-secret
+        - name: EMAIL_SSL
           valueFrom:
             secretKeyRef:
-              key: emailHost
-              name: rerc-secret
-        - name: emailPassword
+              key: EMAIL_SSL
+              name: opendatapolicing-secret
+        - name: EMAIL_USERNAME
           valueFrom:
             secretKeyRef:
-              key: emailPassword
-              name: rerc-secret
-        - name: emailPort
+              key: EMAIL_USERNAME
+              name: opendatapolicing-secret
+        - name: JDBC_HOST
           valueFrom:
             secretKeyRef:
-              key: emailPort
-              name: rerc-secret
-        - name: emailSsl
+              key: host
+              name: postgres-pguser-opendatapolicing
+        - name: JDBC_PORT
           valueFrom:
             secretKeyRef:
-              key: emailSsl
-              name: rerc-secret
-        - name: emailUsername
+              key: port
+              name: postgres-pguser-opendatapolicing
+        - name: JDBC_DATABASE
           valueFrom:
             secretKeyRef:
-              key: emailUsername
-              name: rerc-secret
-        - name: jdbcHost
+              key: dbname
+              name: postgres-pguser-opendatapolicing
+        - name: JDBC_USERNAME
           valueFrom:
             secretKeyRef:
-              key: jdbcHost
-              name: rerc-secret
-        - name: jdbcPort
+              key: user
+              name: postgres-pguser-opendatapolicing
+        - name: JDBC_PASSWORD
           valueFrom:
             secretKeyRef:
-              key: jdbcPort
-              name: rerc-secret
-        - name: jdbcDatabase
+              key: password
+              name: postgres-pguser-opendatapolicing
+        - name: ACS_API_KEY
           valueFrom:
             secretKeyRef:
-              key: jdbcDatabase
-              name: rerc-secret
-        - name: jdbcUsername
+              key: ACS_API_KEY
+              name: opendatapolicing-secret
+        - name: FTP_SYNC_HOST_NAME
           valueFrom:
             secretKeyRef:
-              key: jdbcUsername
-              name: rerc-secret
-        - name: jdbcPassword
+              key: FTP_SYNC_HOST_NAME
+              name: opendatapolicing-secret
+        - name: FTP_SYNC_PORT
           valueFrom:
             secretKeyRef:
-              key: jdbcPassword
-              name: rerc-secret
-        - name: openshiftService
-          value: rerc
-        - name: clusterPort
-          value: "8081"
-        - name: zookeeperHostName
-          value: zookeeper.rerc.svc
-        - name: zookeeperPort
-          value: "2181"
-        - name: solrHostName
-          value: default-solrcloud-common
-        - name: solrPort
+              key: FTP_SYNC_PORT
+              name: opendatapolicing-secret
+        - name: FTP_SYNC_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: FTP_SYNC_USERNAME
+              name: opendatapolicing-secret
+        - name: FTP_SYNC_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: FTP_SYNC_PASSWORD
+              name: opendatapolicing-secret
+        - name: FTP_SYNC_REMOTE_PATH
+          valueFrom:
+            secretKeyRef:
+              key: FTP_SYNC_REMOTE_PATH
+              name: opendatapolicing-secret
+        - name: OPENSHIFT_SERVICE
+          value: opendatapolicing
+#        - name: CLUSTER_PORT
+#          value: "8081"
+#        - name: ZOOKEEPER_HOST_NAME
+#          value: zookeeper.southerncoalition.svc
+#        - name: ZOOKEEPER_PORT
+#          value: "2181"
+        - name: SOLR_HOST_NAME
+          value: default-solrcloud-common.scsj-86c3ca.svc
+        - name: SOLR_PORT
           value: "80"
-        - name: solrUrl
-          value: http://default-solrcloud-common:8983/solr/site
-        - name: siteHostName
-          value: rerc.apps-crc.testing
-        - name: sitePort
+        - name: SOLR_URL
+          value: http://default-solrcloud-common.scsj-86c3ca.svc/solr/opendatapolicing
+        - name: SITE_HOST_NAME
+          value: www.opendatapolicingnc.com
+        - name: SITE_PORT
           value: "8080"
-        - name: siteBaseUrl
-          value: https://rerc.apps-crc.testing
-        - name: numberExecutors
-          value: "5"
-        - name: staticBaseUrl
-          value: https://southerncoalition.neocities.org
-        - name: siteZone
+        - name: SITE_BASE_URL
+          value: https://www.opendatapolicingnc.com
+        - name: STATIC_BASE_URL
+          value: https://southerncoalition.neocities.org/opendatapolicing
+        - name: STATIC_PATH
+          value: /opt/static
+        - name: SITE_ZONE
           value: America/New_York
         - name: JAVA_MAIN_CLASS
-          value: org.southerncoalition.enus.vertx.AppVertx
-        - name: ENABLE_DB_SOLR_SYNC
+          value: com.opendatapolicing.enus.vertx.MainVerticle
+        - name: SITE_INSTANCES
+          value: "6"
+        - name: WORKER_POOL_SIZE
+          value: "2"
+        - name: API_COUNTER_FETCH
+          value: "10"
+        - name: API_COUNTER_RESUME
+          value: "0"
+        - name: ENABLE_IMPORT_DATA
           value: "true"
-        image: quay.io/computateorg/rerc:latest
+        - name: TIMER_DB_SOLR_SYNC_IN_SECONDS
+          value: "1"
+        - name: ENABLE_DB_SOLR_SYNC
+          value: "False"
+        - name: ENABLE_DB_SOLR_SYNC_TrafficContraband
+          value: "False"
+        - name: ENABLE_DB_SOLR_SYNC_SearchBasis
+          value: "False"
+        - name: ENABLE_DB_SOLR_SYNC_TrafficSearch
+          value: "False"
+        - name: ENABLE_DB_SOLR_SYNC_TrafficPerson
+          value: "False"
+        - name: ENABLE_DB_SOLR_SYNC_TrafficStop
+          value: "False"
+        - name: ENABLE_DB_SOLR_SYNC_SiteAgency
+          value: "true"
+        - name: ENABLE_REFRESH_DATA
+          value: "False"
+        - name: ENABLE_REFRESH_DATA_TrafficContraband
+          value: "False"
+        - name: ENABLE_REFRESH_DATA_SearchBasis
+          value: "False"
+        - name: ENABLE_REFRESH_DATA_TrafficSearch
+          value: "False"
+        - name: ENABLE_REFRESH_DATA_TrafficPerson
+          value: "False"
+        - name: ENABLE_REFRESH_DATA_TrafficStop
+          value: "False"
+        - name: ENABLE_FTP_SYNC
+          value: "true"
+        - name: ENABLE_FTP_SYNC_TrafficStop
+          value: "true"
+        - name: ENABLE_FTP_SYNC_TrafficPerson
+          value: "true"
+        - name: ENABLE_FTP_SYNC_TrafficSearch
+          value: "true"
+        - name: ENABLE_FTP_SYNC_SearchBasis
+          value: "true"
+        - name: ENABLE_FTP_SYNC_TrafficContraband
+          value: "true"
+        - name: FTP_SYNC_PATH_ZIP
+          value: /opt/ftp/STOPS_Extract.zip
+        - name: FTP_SYNC_PATH_TrafficStop
+          value: /opt/ftp/Stop.txt
+        - name: FTP_SYNC_PATH_TrafficPerson
+          value: /opt/ftp/PERSON.txt
+        - name: FTP_SYNC_PATH_TrafficSearch
+          value: /opt/ftp/Search.txt
+        - name: FTP_SYNC_PATH_TrafficContraband
+          value: /opt/ftp/Contraband.txt
+        - name: FTP_SYNC_PATH_TrafficSearchBasis
+          value: /opt/ftp/SearchBasis.txt
+        - name: FTP_SYNC_PATH_SearchBasis
+          value: /opt/ftp/SearchBasis.txt
+        - name: JDBC_MAX_POOL_SIZE
+          value: "50"
+        - name: JDBC_MAX_WAIT_QUEUE_SIZE
+          value: "1000"
+        - name: ENABLE_FTP_DOWNLOAD
+          value: "true"
+        - name: VERTX_WARNING_EXCEPTION_SECONDS
+          value: "15"
+        - name: JAVA_OPTS
+        - name: SSL_PASSTHROUGH
+          value: "false"
+        image: quay.io/computateorg/opendatapolicing:latest
         imagePullPolicy: Always
         name: rerc
         ports:
@@ -152,13 +251,27 @@ spec:
           protocol: TCP
         resources:
           limits:
-            memory: 800Mi
+            memory: 6Gi
+            cpu: '2'
+          requests:
+            memory: 6Gi
+            cpu: '2'
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
-        - mountPath: /opt/keystore
-          name: volume-keystore
+        - mountPath: /opt/static/template
+          name: volume-template
           readOnly: true
+        - mountPath: /opt/ftp
+          name: volume-ftp
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: opendatapolicing-template
+        name: volume-template
+      - name: volume-ftp
+        persistentVolumeClaim:
+          claimName: opendatapolicing-persistent-volume-claim-ftp
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler

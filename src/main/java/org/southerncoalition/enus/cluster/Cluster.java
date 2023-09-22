@@ -34,8 +34,8 @@ import org.southerncoalition.enus.xml.UtilXml;
  * ApiMethod.enUS: Search
  * 
  * ApiMethode.enUS: SearchPage
- * PageSearchPage.enUS: ClusterPage
- * ApiUriSearchPage.enUS: /cluster
+ * Page.SearchPage.enUS: ClusterPage
+ * ApiUri.SearchPage.enUS: /cluster
  * 
  * AName.enUS: a cluster
  * Color: gray

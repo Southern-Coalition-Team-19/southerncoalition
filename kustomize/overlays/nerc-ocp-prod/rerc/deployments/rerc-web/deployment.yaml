@@ -19,20 +19,14 @@ spec:
     metadata:
       labels:
         app: rerc
-        deploymentconfig: rerc
+        deployment: rerc
     spec:
       containers:
       - env:
         - name: authRealm
-          valueFrom:
-            secretKeyRef:
-              key: authRealm
-              name: rerc-secret
+          value: SOUTHERNCOALITION
         - name: authResource
-          valueFrom:
-            secretKeyRef:
-              key: authResource
-              name: rerc-secret
+          value: southerncoalition
         - name: authSecret
           valueFrom:
             secretKeyRef:
@@ -81,48 +75,48 @@ spec:
         - name: jdbcHost
           valueFrom:
             secretKeyRef:
-              key: jdbcHost
-              name: rerc-secret
+              key: host
+              name: postgres-pguser-rerc
         - name: jdbcPort
           valueFrom:
             secretKeyRef:
-              key: jdbcPort
-              name: rerc-secret
+              key: port
+              name: postgres-pguser-rerc
         - name: jdbcDatabase
           valueFrom:
             secretKeyRef:
-              key: jdbcDatabase
-              name: rerc-secret
+              key: dbname
+              name: postgres-pguser-rerc
         - name: jdbcUsername
           valueFrom:
             secretKeyRef:
-              key: jdbcUsername
-              name: rerc-secret
+              key: user
+              name: postgres-pguser-rerc
         - name: jdbcPassword
           valueFrom:
             secretKeyRef:
-              key: jdbcPassword
-              name: rerc-secret
+              key: password
+              name: postgres-pguser-rerc
         - name: openshiftService
           value: rerc
-        - name: clusterPort
-          value: "8081"
-        - name: zookeeperHostName
-          value: zookeeper.rerc.svc
-        - name: zookeeperPort
-          value: "2181"
+#        - name: clusterPort
+#          value: "8081"
+#        - name: zookeeperHostName
+#          value: zookeeper.rerc.svc
+#        - name: zookeeperPort
+#          value: "2181"
         - name: solrHostName
           value: default-solrcloud-common
         - name: solrPort
           value: "80"
         - name: solrUrl
-          value: http://default-solrcloud-common.solr.svc:8983/solr/rerc
+          value: http://default-solrcloud-common.scsj-86c3ca.svc:80/solr/rerc
         - name: siteHostName
-          value: rerc.apps-crc.testing
+          value: rerc.computate.org
         - name: sitePort
           value: "8080"
         - name: siteBaseUrl
-          value: https://rerc.apps-crc.testing
+          value: https://rerc.computate.org
         - name: numberExecutors
           value: "5"
         - name: staticBaseUrl
@@ -151,13 +145,13 @@ spec:
           protocol: TCP
         resources:
           limits:
-            memory: 800Mi
+            memory: 1Gi
+            cpu: '1'
+          requests:
+            memory: 1Gi
+            cpu: '1'
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
-        volumeMounts:
-        - mountPath: /opt/keystore
-          name: volume-keystore
-          readOnly: true
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler

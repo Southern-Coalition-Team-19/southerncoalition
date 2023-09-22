@@ -1,4 +1,23 @@
-# Description
+
+### Build the container with podman
+
+```bash
+cd ~/.local/src/TLC
+podman build -t computateorg/rerc:latest .
+```
+
+### Push the container up to quay.io
+```bash
+podman login quay.io
+podman push computateorg/rerc:latest quay.io/computateorg/rerc:latest
+```
+
+### Run the container for local development
+
+```bash
+podman run --rm -it --entrypoint /bin/bash computateorg/rerc:latest
+java $JAVA_OPTS -cp .:* org.southerncoalition.enus.vertx.AppVertx
+```
 
 # Prerequisites
 

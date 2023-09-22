@@ -68,7 +68,7 @@ spec:
           limits:
             memory: 1Gi
             cpu: '1'
-      replicas: 2
+      replicas: 1
       name: 'postgres'
       resources:
         requests:
@@ -90,17 +90,17 @@ spec:
       options: "SUPERUSER"
       databases:
         - opendatapolicing
-    - name: southerncoalition
+    - name: rerc
       options: "SUPERUSER"
       databases:
-        - southerncoalition
+        - rerc
   patroni:
     dynamicConfiguration:
       postgresql:
         pg_hba:
           - "host sso sso all md5"
           - "local sso sso trust"
-          - "host opendatapolicing opendatapolicing all md5"
+          - "host opendatapolicing opendatapolicing all trust"
           - "local opendatapolicing opendatapolicing trust"
-          - "host southerncoalition southerncoalition all md5"
-          - "local southerncoalition southerncoalition trust"
+          - "host rerc rerc all trust"
+          - "local rerc rerc trust"

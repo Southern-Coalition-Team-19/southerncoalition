@@ -25,9 +25,9 @@ import org.southerncoalition.enus.wrap.Wrap;
  * ApiMethod: POST
  * 
  * ApiMethod.enUS: SearchPage
- * PageSearchPage.enUS: SiteUserPage
+ * Page.SearchPage.enUS: SiteUserPage
  * SuperPageSearchPage.enUS: ClusterPage
- * ApiUriSearchPage.enUS: /user
+ * ApiUri.SearchPage.enUS: /user
  * 
  * Keyword: classSimpleNameSiteUser
  * Role.frFR: SiteAdmin

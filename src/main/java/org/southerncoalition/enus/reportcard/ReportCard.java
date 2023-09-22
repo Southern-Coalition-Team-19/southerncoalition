@@ -82,13 +82,13 @@ import org.southerncoalition.enus.wrap.Wrap;
  * ApiMethod.enUS: Search
  * 
  * ApiMethod.enUS: AdminSearch
- * ApiUriAdminSearch.enUS: /api/admin/reportcard
+ * ApiUri.AdminSearch.enUS: /api/admin/reportcard
  * RoleUtilisateurAdminSearch.enUS: true
  * 
  * ApiMethod.enUS: SearchPage
- * PageSearchPage.enUS: ReportCardPage
- * PageSuperSearchPage.enUS: ClusterPage
- * ApiUriSearchPage.enUS: /reportcard
+ * Page.SearchPage.enUS: ReportCardPage
+ * PageSuper.SearchPage.enUS: ClusterPage
+ * ApiUri.SearchPage.enUS: /reportcard
  * 
  * AName.enUS: a report card
  * Color: pale-green

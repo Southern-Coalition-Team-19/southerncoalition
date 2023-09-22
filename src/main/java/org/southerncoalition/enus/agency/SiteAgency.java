@@ -28,13 +28,13 @@ import org.southerncoalition.enus.wrap.Wrap;
  * ApiMethod.enUS: Search
  * 
  * ApiMethod.enUS: AdminSearch
- * ApiUriAdminSearch.enUS: /api/admin/agency
+ * ApiUri.AdminSearch.enUS: /api/admin/agency
  * RoleUtilisateurAdminSearch.enUS: true
  * 
  * ApiMethod.enUS: SearchPage
- * PageSearchPage.enUS: SiteAgencyPage
- * PageSuperSearchPage.enUS: ClusterPage
- * ApiUriSearchPage.enUS: /agency
+ * Page.SearchPage.enUS: SiteAgencyPage
+ * PageSuper.SearchPage.enUS: ClusterPage
+ * ApiUri.SearchPage.enUS: /agency
  * 
  * AName.enUS: a agency
  * Color: pale-yellow

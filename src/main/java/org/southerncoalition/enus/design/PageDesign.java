@@ -24,34 +24,34 @@ import org.southerncoalition.enus.wrap.Wrap;
  * ApiMethod.enUS: Search
  * 
  * ApiMethod.enUS: AdminSearch
- * ApiUriAdminSearch.enUS: /api/admin/page-design
+ * ApiUri.AdminSearch.enUS: /api/admin/page-design
  * RoleUtilisateurAdminSearch.enUS: true
  * 
  * ApiMethod.enUS: SearchPage
- * PageSearchPage.enUS: PageDesignPage
- * PageSuperSearchPage.enUS: ClusterPage
- * ApiUriSearchPage.enUS: /page-design
+ * Page.SearchPage.enUS: PageDesignPage
+ * PageSuper.SearchPage.enUS: ClusterPage
+ * ApiUri.SearchPage.enUS: /page-design
  * 
  * ApiMethod.enUS: DesignDisplaySearchPage
- * PageDesignDisplaySearchPage.enUS: DesignDisplayPage
- * PageSuperDesignDisplaySearchPage.enUS: ClusterPage
- * ApiUriDesignDisplaySearchPage.enUS: /page
+ * Page.DesignDisplaySearchPage.enUS: DesignDisplayPage
+ * PageSuper.DesignDisplaySearchPage.enUS: ClusterPage
+ * ApiUri.DesignDisplaySearchPage.enUS: /page
  * 
  * ApiMethod.enUS: DesignPdfSearchPage
- * PageDesignPdfSearchPage.enUS: DesignPdfPage
- * PageSuperDesignPdfSearchPage.enUS: ClusterPage
- * ApiUriDesignPdfSearchPage.enUS: /pdf
+ * Page.DesignPdfSearchPage.enUS: DesignPdfPage
+ * PageSuper.DesignPdfSearchPage.enUS: ClusterPage
+ * ApiUri.DesignPdfSearchPage.enUS: /pdf
  * ApiTypeMedia200DesignPdfSearchPage: application/pdf
  * 
  * ApiMethod.enUS: DesignEmailSearchPage
- * PageDesignEmailSearchPage.enUS: DesignEmailPage
- * PageSuperDesignEmailSearchPage.enUS: ClusterPage
- * ApiUriDesignEmailSearchPage.enUS: /email
+ * Page.DesignEmailSearchPage.enUS: DesignEmailPage
+ * PageSuper.DesignEmailSearchPage.enUS: ClusterPage
+ * ApiUri.DesignEmailSearchPage.enUS: /email
  * 
  * ApiMethod.enUS: HomePageSearchPage
- * PageHomePageSearchPage.enUS: DesignDisplayPage
- * PageSuperHomePageSearchPage.enUS: ClusterPage
- * ApiUriHomePageSearchPage.enUS: /
+ * Page.HomePageSearchPage.enUS: DesignDisplayPage
+ * PageSuper.HomePageSearchPage.enUS: ClusterPage
+ * ApiUri.HomePageSearchPage.enUS: /
  * 
  * AName.enUS: a page design
  * Color: khaki
