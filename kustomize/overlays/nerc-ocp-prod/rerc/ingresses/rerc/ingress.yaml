@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rerc
+  namespace: scsj-86c3ca
+  annotations:
+    cert-manager.io/issuer: letsencrypt-issuer
+    acme.cert-manager.io/http01-ingress-class: openshift-default
+spec:
+  ingressClassName: openshift-default
+  tls:
+  - hosts:
+    - rerc.computate.org
+    secretName: rerc-cert
+  rules:
+  - host: rerc.computate.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: rerc-web
+            port:
+              number: 8080

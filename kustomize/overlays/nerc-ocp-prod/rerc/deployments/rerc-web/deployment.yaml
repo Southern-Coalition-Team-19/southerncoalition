@@ -1,0 +1,165 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rerc
+  namespace: scsj-86c3ca
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: rerc
+      deployment: rerc
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: rerc
+        deploymentconfig: rerc
+    spec:
+      containers:
+      - env:
+        - name: authRealm
+          valueFrom:
+            secretKeyRef:
+              key: authRealm
+              name: rerc-secret
+        - name: authResource
+          valueFrom:
+            secretKeyRef:
+              key: authResource
+              name: rerc-secret
+        - name: authSecret
+          valueFrom:
+            secretKeyRef:
+              key: authSecret
+              name: rerc-secret
+        - name: authUrl
+          valueFrom:
+            secretKeyRef:
+              key: authUrl
+              name: rerc-secret
+        - name: emailAuth
+          valueFrom:
+            secretKeyRef:
+              key: emailAuth
+              name: rerc-secret
+        - name: emailFrom
+          valueFrom:
+            secretKeyRef:
+              key: emailFrom
+              name: rerc-secret
+        - name: emailHost
+          valueFrom:
+            secretKeyRef:
+              key: emailHost
+              name: rerc-secret
+        - name: emailPassword
+          valueFrom:
+            secretKeyRef:
+              key: emailPassword
+              name: rerc-secret
+        - name: emailPort
+          valueFrom:
+            secretKeyRef:
+              key: emailPort
+              name: rerc-secret
+        - name: emailSsl
+          valueFrom:
+            secretKeyRef:
+              key: emailSsl
+              name: rerc-secret
+        - name: emailUsername
+          valueFrom:
+            secretKeyRef:
+              key: emailUsername
+              name: rerc-secret
+        - name: jdbcHost
+          valueFrom:
+            secretKeyRef:
+              key: jdbcHost
+              name: rerc-secret
+        - name: jdbcPort
+          valueFrom:
+            secretKeyRef:
+              key: jdbcPort
+              name: rerc-secret
+        - name: jdbcDatabase
+          valueFrom:
+            secretKeyRef:
+              key: jdbcDatabase
+              name: rerc-secret
+        - name: jdbcUsername
+          valueFrom:
+            secretKeyRef:
+              key: jdbcUsername
+              name: rerc-secret
+        - name: jdbcPassword
+          valueFrom:
+            secretKeyRef:
+              key: jdbcPassword
+              name: rerc-secret
+        - name: openshiftService
+          value: rerc
+        - name: clusterPort
+          value: "8081"
+        - name: zookeeperHostName
+          value: zookeeper.rerc.svc
+        - name: zookeeperPort
+          value: "2181"
+        - name: solrHostName
+          value: default-solrcloud-common
+        - name: solrPort
+          value: "80"
+        - name: solrUrl
+          value: http://default-solrcloud-common.solr.svc:8983/solr/rerc
+        - name: siteHostName
+          value: rerc.apps-crc.testing
+        - name: sitePort
+          value: "8080"
+        - name: siteBaseUrl
+          value: https://rerc.apps-crc.testing
+        - name: numberExecutors
+          value: "5"
+        - name: staticBaseUrl
+          value: https://southerncoalition.neocities.org
+        - name: siteZone
+          value: America/New_York
+        - name: JAVA_MAIN_CLASS
+          value: org.southerncoalition.enus.vertx.AppVertx
+        - name: ENABLE_DB_SOLR_SYNC
+          value: "true"
+        image: quay.io/computateorg/rerc:latest
+        imagePullPolicy: Always
+        name: rerc
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 8081
+          name: cluster
+          protocol: TCP
+        - containerPort: 9779
+          name: prometheus
+          protocol: TCP
+        - containerPort: 8778
+          name: jolokia
+          protocol: TCP
+        resources:
+          limits:
+            memory: 800Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /opt/keystore
+          name: volume-keystore
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30

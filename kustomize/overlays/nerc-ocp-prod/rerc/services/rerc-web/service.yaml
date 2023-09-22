@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rerc
+  namespace: scsj-86c3ca
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  - name: cluster
+    port: 8081
+    protocol: TCP
+    targetPort: 8081
+  selector:
+    deployment: rerc-web
+  sessionAffinity: None
+  type: ClusterIP

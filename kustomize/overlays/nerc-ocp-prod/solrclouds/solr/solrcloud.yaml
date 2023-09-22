@@ -1,0 +1,60 @@
+apiVersion: solr.apache.org/v1beta1
+kind: SolrCloud
+metadata:
+  name: default
+  namespace: scsj-86c3ca
+spec:
+  replicas: 2
+  busyBoxImage:
+    repository: docker.io/library/busybox
+    tag: 1.36.0-glibc
+  solrImage:
+    repository: docker.io/library/solr
+    tag: 9.1.1
+  dataStorage:
+    persistent:
+      pvcTemplate:
+        spec:
+          resources:
+            requests:
+              storage: 30Gi
+  customSolrKubeOptions:
+    podOptions:
+      serviceAccountName: solr
+      podSecurityContext:
+        runAsNonRoot: true
+      defaultInitContainerResources:
+        limits:
+          cpu: 200m
+          memory: 200Mi
+        requests:
+          cpu: 200m
+          memory: 200Mi
+      resources:
+        limits:
+          cpu: '2'
+          memory: 6Gi
+        requests:
+          cpu: '1'
+          memory: 6Gi
+      volumes:
+        - name: computate-configset
+          source:
+            configMap:
+              defaultMode: 440
+              name: computate-configset
+          defaultContainerMount:
+              mountPath: /opt/solr/server/solr/configsets/computate/conf
+              name: computate-configset
+  zookeeperRef:
+    provided:
+      replicas: 2
+      zookeeperPodPolicy:
+        resources:
+          limits:
+            cpu: 500m
+            memory: 500Mi
+          requests:
+            cpu: 200m
+            memory: 200Mi
+              
