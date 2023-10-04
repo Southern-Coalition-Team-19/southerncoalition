@@ -2,7 +2,7 @@
 ### Build the container with podman
 
 ```bash
-cd ~/.local/src/TLC
+cd ~/.local/src/southerncoalition
 podman build -t computateorg/rerc:latest .
 ```
 

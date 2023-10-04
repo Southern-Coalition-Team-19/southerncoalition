@@ -10,10 +10,10 @@ spec:
   ingressClassName: openshift-default
   tls:
   - hosts:
-    - rerc.computate.org
+    - rerc.southerncoalition.org
     secretName: rerc-cert
   rules:
-  - host: rerc.computate.org
+  - host: rerc.southerncoalition.org
     http:
       paths:
       - path: /

@@ -387,7 +387,8 @@ public class AppVertx extends AppVertxGen<AbstractVerticle> {
 		oauth2ClientOptions.setClientSecret(siteConfig.getAuthSecret());
 		oauth2ClientOptions.setFlow(OAuth2FlowType.AUTH_CODE);
 		JsonObject extraParams = new JsonObject();
-		extraParams.put("scope", "openid DefaultAuthScope SiteAdminScope");
+		extraParams.put("scope", "profile");
+		extraParams.put("scopes", "profile");
 		oauth2ClientOptions.setExtraParameters(extraParams);
 
 		OpenIDConnectAuth.discover(vertx, oauth2ClientOptions, a -> {
@@ -395,9 +396,7 @@ public class AppVertx extends AppVertxGen<AbstractVerticle> {
 				OAuth2Auth authProvider = a.result();
 	
 				OAuth2AuthHandler authHandler = OAuth2AuthHandler.create(authProvider, siteUrlBase + "/callback");
-				authHandler.addAuthority("DefaultAuthScope");
-				authHandler.addAuthority("SiteAdminScope");
-				authHandler.addAuthority("openid");
+				authHandler.addAuthority("profile");
 				{
 					Router tempRouter = Router.router(vertx);
 					authHandler.setupCallback(tempRouter.get("/callback"));
@@ -430,7 +429,7 @@ public class AppVertx extends AppVertxGen<AbstractVerticle> {
 		
 							final JsonObject config = new JsonObject().put("code", code);
 		
-							config.put("redirect_uri", siteUrlBase + "/callback");
+							config.put("redirect_url", siteUrlBase + "/callback");
 		
 							authProvider.authenticate(config, res -> {
 								if (res.failed()) {
@@ -485,9 +484,10 @@ public class AppVertx extends AppVertxGen<AbstractVerticle> {
 						routerFactory.addFailureHandlerByOperationId("logout", c -> {});
 		
 //						routerFactory.addSecurityHandler("openIdConnect", authHandler);
-						routerFactory.addSecuritySchemaScopeValidator("openIdConnect", "DefaultAuthScope", authHandler);
-						routerFactory.addSecuritySchemaScopeValidator("openIdConnect", "SiteAdminScope", authHandler);
-						routerFactory.addSecuritySchemaScopeValidator("openIdConnect", "openid", authHandler);
+						routerFactory.addSecuritySchemaScopeValidator("openIdConnect", "profile", authHandler);
+//						routerFactory.addSecuritySchemaScopeValidator("openIdConnect", "DefaultAuthScope", authHandler);
+//						routerFactory.addSecuritySchemaScopeValidator("openIdConnect", "SiteAdminScope", authHandler);
+//						routerFactory.addSecuritySchemaScopeValidator("openIdConnect", "openid", authHandler);
 						Router router = routerFactory.getRouter();
 						siteContextEnUS.setRouter(router);
 		

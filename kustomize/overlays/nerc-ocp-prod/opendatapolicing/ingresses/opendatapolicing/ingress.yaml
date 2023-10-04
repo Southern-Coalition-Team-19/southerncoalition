@@ -10,10 +10,10 @@ spec:
   ingressClassName: openshift-default
   tls:
   - hosts:
-    - opendatapolicing.computate.org
+    - www.opendatapolicingnc.com
     secretName: opendatapolicing-cert
   rules:
-  - host: opendatapolicing.computate.org
+  - host: www.opendatapolicingnc.com
     http:
       paths:
       - path: /

@@ -112,11 +112,11 @@ spec:
         - name: solrUrl
           value: http://default-solrcloud-common.scsj-86c3ca.svc:80/solr/rerc
         - name: siteHostName
-          value: rerc.computate.org
+          value: rerc.southerncoalition.org
         - name: sitePort
           value: "8080"
         - name: siteBaseUrl
-          value: https://rerc.computate.org
+          value: https://rerc.southerncoalition.org
         - name: numberExecutors
           value: "5"
         - name: staticBaseUrl
@@ -126,7 +126,7 @@ spec:
         - name: JAVA_MAIN_CLASS
           value: org.southerncoalition.enus.vertx.AppVertx
         - name: ENABLE_DB_SOLR_SYNC
-          value: "true"
+          value: "false"
         image: quay.io/computateorg/rerc:latest
         imagePullPolicy: Always
         name: rerc

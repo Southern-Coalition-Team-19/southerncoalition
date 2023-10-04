@@ -50,7 +50,7 @@ spec:
               - "ReadWriteOnce"
               resources:
                 requests:
-                  storage: 15Gi
+                  storage: 90Gi
                   memory: 200Mi
                   cpu: 200m
                 limits:
@@ -62,12 +62,12 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 55Gi
-            memory: 1Gi
-            cpu: '1'
+            storage: 90Gi
+            memory: 4Gi
+            cpu: '2'
           limits:
-            memory: 1Gi
-            cpu: '1'
+            memory: 4Gi
+            cpu: '2'
       replicas: 1
       name: 'postgres'
       resources:

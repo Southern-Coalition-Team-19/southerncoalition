@@ -4,7 +4,7 @@ metadata:
   name: default
   namespace: scsj-86c3ca
 spec:
-  replicas: 2
+  replicas: 1
   busyBoxImage:
     repository: docker.io/library/busybox
     tag: 1.36.0-glibc
@@ -17,7 +17,7 @@ spec:
         spec:
           resources:
             requests:
-              storage: 30Gi
+              storage: 100Gi
   customSolrKubeOptions:
     podOptions:
       serviceAccountName: solr
@@ -49,6 +49,16 @@ spec:
   zookeeperRef:
     provided:
       replicas: 2
+      persistence:
+        reclaimPolicy: Retain
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            limits:
+              storage: 1Gi
+            requests:
+              storage: 1Gi
       zookeeperPodPolicy:
         resources:
           limits:
@@ -57,4 +67,3 @@ spec:
           requests:
             cpu: 200m
             memory: 200Mi
-              

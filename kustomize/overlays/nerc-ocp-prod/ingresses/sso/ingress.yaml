@@ -10,10 +10,10 @@ spec:
   ingressClassName: openshift-default
   tls:
   - hosts:
-    - sso.opendatapolicingnc.com
+    - sso.southerncoalition.org
     secretName: sso-cert
   rules:
-  - host: sso.opendatapolicingnc.com
+  - host: sso.southerncoalition.org
     http:
       paths:
       - path: /

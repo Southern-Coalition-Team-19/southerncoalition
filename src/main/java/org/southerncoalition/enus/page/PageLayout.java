@@ -217,7 +217,7 @@ public class PageLayout extends PageLayoutGen<Object> {
 	protected void _pageLogoutUri(Wrap<String> c) {
 		try {
 			SiteConfig siteConfig = siteRequest_.getSiteConfig_();
-			String o = siteConfig.getAuthUrl() + "/realms/" + siteConfig.getAuthRealm() + "/protocol/openid-connect/logout?redirect_uri=" + URLEncoder.encode(siteConfig.getSiteBaseUrl() + "/logout", "UTF-8");
+			String o = siteConfig.getAuthUrl() + "/realms/" + siteConfig.getAuthRealm() + "/protocol/openid-connect/logout?redirect_url=" + URLEncoder.encode(siteConfig.getSiteBaseUrl() + "/logout", "UTF-8");
 			c.o(o);
 		} catch (UnsupportedEncodingException e) {
 			ExceptionUtils.rethrow(e);
