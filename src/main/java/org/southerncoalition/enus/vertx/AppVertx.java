@@ -429,10 +429,11 @@ public class AppVertx extends AppVertxGen<AbstractVerticle> {
 		
 							final JsonObject config = new JsonObject().put("code", code);
 		
-							config.put("redirect_url", siteUrlBase + "/callback");
+							config.put("redirect_uri", siteUrlBase + "/callback");
 		
 							authProvider.authenticate(config, res -> {
 								if (res.failed()) {
+									LOGGER.error(res.cause().getMessage(), res.cause());
 									ctx.fail(res.cause());
 								} else {
 									AccessToken token = (AccessToken) res.result();
