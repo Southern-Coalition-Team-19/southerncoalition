@@ -1,3 +1,5 @@
+*.code-workspace
+.flattened-pom.xml
 .classpath
 .project
 .settings
