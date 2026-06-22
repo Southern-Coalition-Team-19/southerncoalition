@@ -24,6 +24,8 @@
 
 		<vertx.verticle>org.southerncoalition.enUS.vertx.AppVertx</vertx.verticle>
 		<vertx.version>3.8.5</vertx.version>
+
+    <ongres-scram.version>3.2</ongres-scram.version>
 	</properties>
 
 	<dependencies>
@@ -58,6 +60,18 @@
 			<artifactId>postgresql</artifactId>
 			<version>42.7.11</version>
 		</dependency>
+
+    <dependency>
+      <groupId>com.ongres.scram</groupId>
+      <artifactId>scram-common</artifactId>
+      <version>${ongres-scram.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.ongres.scram</groupId>
+      <artifactId>scram-client</artifactId>
+      <version>${ongres-scram.version}</version>
+    </dependency>
 		<dependency>
 			<groupId>org.apache.solr</groupId>
 			<artifactId>solr-solrj</artifactId>
