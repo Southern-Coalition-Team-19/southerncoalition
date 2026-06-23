@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -78,7 +79,9 @@ public class SiteContextEnUS extends SiteContextEnUSGen<Object> {
     String solrPassword = System.getenv("solrPassword");
     UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(solrUserName, solrPassword);
     provider.setCredentials(AuthScope.ANY, credentials);
-    CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
+    HttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(provider)
+        .addInterceptorFirst(new SolrPreemptiveAuthInterceptor(solrUserName, solrPassword))
+        .build();
     HttpSolrClient o = new HttpSolrClient.Builder(siteConfig.getSolrUrl()).withHttpClient(httpClient).build();
     c.o(o);
   }
@@ -94,7 +97,9 @@ public class SiteContextEnUS extends SiteContextEnUSGen<Object> {
       String solrPassword = System.getenv("solrPassword");
       UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(solrUserName, solrPassword);
       provider.setCredentials(AuthScope.ANY, credentials);
-      CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
+      HttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(provider)
+          .addInterceptorFirst(new SolrPreemptiveAuthInterceptor(solrUserName, solrPassword))
+          .build();
       HttpSolrClient o = new HttpSolrClient.Builder(solrUrlComputate).withHttpClient(httpClient).build();
       c.o(o);
     }
